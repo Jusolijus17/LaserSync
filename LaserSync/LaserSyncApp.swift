@@ -9,9 +9,12 @@ import SwiftUI
 
 @main
 struct LaserSyncApp: App {
+    @StateObject private var laserConfig = LaserConfig()
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
+                .environmentObject(laserConfig)
         }
     }
 }

@@ -8,17 +8,45 @@
 import SwiftUI
 
 struct ContentView: View {
+    
     var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
+        TabView {
+            HomeView()
+                .tabItem {
+                    Label("Home", systemImage: "house")
+                }
+            
+            LaserColorView()
+                .tabItem {
+                    Label("Color", systemImage: "paintbrush")
+                }
+            
+            PatternControlView()
+                .tabItem {
+                    Label("Pattern", systemImage: "rectangle.3.offgrid")
+                }
+            
+            ModeControlView()
+                .tabItem {
+                    Label("Mode", systemImage: "slider.horizontal.3")
+                }
+            
+            AdvancedSettingsView()
+                .tabItem {
+                    Label("Settings", systemImage: "gear")
+                }
         }
-        .padding()
+        .onAppear {
+            UITabBar.appearance().backgroundColor = UIColor.secondarySystemBackground
+        }
     }
 }
 
-#Preview {
-    ContentView()
+struct ContentView_Previews: PreviewProvider {
+    static var previews: some View {
+        ContentView()
+            .environmentObject(LaserConfig())
+    }
 }
+
+
