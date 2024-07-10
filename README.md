@@ -11,21 +11,6 @@ LaserSync is an advanced laser light control application designed to synchronize
 - **Advanced Settings**: Adjust vertical and horizontal movements, enable strobe mode, and more.
 - **Real-time Updates**: Periodically fetch the current BPM from the server and update the UI accordingly.
 
-## Installation
-
-1. Clone the repository:
-    ```bash
-    git clone https://github.com/yourusername/LaserSync.git
-    ```
-
-2. Open the project in Xcode:
-    ```bash
-    cd LaserSync
-    open LaserSync.xcodeproj
-    ```
-
-3. Build and run the project on your iOS device or simulator.
-
 ## Usage
 
 ### Setting Up the Server
@@ -45,23 +30,4 @@ Ensure that the server is running and accessible. Update the server IP and port 
 - **Patterns**: Choose a pattern by tapping on the desired pattern button. Enable BPM sync to automatically cycle through patterns.
 - **Modes**: Switch between different modes using the mode buttons.
 - **BPM Multiplier**: Adjust the BPM multiplier using the plus and minus buttons to slow down or speed up the synchronization.
-
-## Contributing
-
-Contributions are welcome! Please follow these steps:
-
-1. Fork the repository.
-2. Create a new branch (`git checkout -b feature-branch`).
-3. Make your changes.
-4. Commit your changes (`git commit -am 'Add new feature'`).
-5. Push to the branch (`git push origin feature-branch`).
-6. Create a new Pull Request.
-
-## License
-
-This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for details.
-
-## Contact
-
-For questions or feedback, please contact [your email].
 
