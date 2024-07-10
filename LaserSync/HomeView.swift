@@ -12,9 +12,8 @@ struct HomeView: View {
     @EnvironmentObject var laserConfig: LaserConfig
     @State private var isRequestInProgress = false
     @State private var isBlinking = false
-    @State private var timer: Timer?
-    @State private var bpmUpdateTimer: Timer?
-    @State private var errorCount = 0
+    @State private var blinkingTimer: Timer?
+    @State private var networkErrorCount = 0
     @State private var showRetry = false
 
     var body: some View {
@@ -26,24 +25,23 @@ struct HomeView: View {
                 Text("\(laserConfig.currentBpm) BPM")
                     .font(.largeTitle)
                     .foregroundColor(.white)
+                    .onChange(of: laserConfig.networkErrorCount) {
+                        if laserConfig.networkErrorCount >= 3 {
+                            self.showRetry = true
+                            self.stopBlinking()
+                        }
+                    }
                 
                 Circle()
-                    .fill(showRetry || laserConfig.currentBpm == 0 ? Color.red : Color.green)
+                    .fill(getBpmIndicatorColor())
                     .frame(width: 20, height: 20)
                     .opacity(isBlinking || laserConfig.currentBpm == 0 ? 1.0 : 0.0)
-                    .onAppear {
-                        startBpmUpdate()
-                    }
-                    .onDisappear {
-                        stopBpmUpdate()
-                    }
             }
             
             if showRetry {
                 Button(action: {
-                    errorCount = 0
+                    laserConfig.restartBpmUpdate()
                     showRetry = false
-                    startBpmUpdate()
                 }) {
                     Label("Retry", systemImage: "arrow.clockwise.circle")
                 }
@@ -90,6 +88,7 @@ struct HomeView: View {
                         .overlay(content: {
                             ZStack {
                                 laserConfig.currentPattern.shape
+                                    .foregroundStyle(.white)
                                     .frame(width: 100, height: 50)
                                 VStack {
                                     Spacer()
@@ -191,24 +190,23 @@ struct HomeView: View {
             Spacer()
         }
         .background(Color.black.edgesIgnoringSafeArea(.all))
-        .onAppear {
-            laserConfig.getCurrentBpm() { newBpm, _  in
-                if newBpm {
-                    self.startBlinking()
-                }
+        .onChange(of: laserConfig.currentBpm) {
+            if laserConfig.currentBpm != 0 {
+                self.restartBlinking()
             }
         }
     }
     
     func startBlinking() {
-        timer = Timer.scheduledTimer(withTimeInterval: 60.0 / Double(laserConfig.currentBpm) / 2, repeats: true) { _ in
+        blinkingTimer = Timer.scheduledTimer(withTimeInterval: 60.0 / Double(laserConfig.currentBpm) / 2, repeats: true) { _ in
             isBlinking.toggle()
         }
     }
 
     func stopBlinking() {
-        timer?.invalidate()
-        timer = nil
+        blinkingTimer?.invalidate()
+        blinkingTimer = nil
+        isBlinking = true
     }
     
     func restartBlinking() {
@@ -216,36 +214,14 @@ struct HomeView: View {
         startBlinking()
     }
     
-    func startBpmUpdate() {
-        bpmUpdateTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-            if !isRequestInProgress {
-                isRequestInProgress = true
-                print("Request in progress")
-                laserConfig.getCurrentBpm() { newBpm, networkError in
-                    isRequestInProgress = false
-                    print("Request done")
-                    if networkError {
-                        print("Network error")
-                        errorCount += 1
-                        if errorCount >= 3 {
-                            stopBpmUpdate()
-                            showRetry = true
-                        }
-                    } else {
-                        errorCount = 0
-                        print("Request found BPM")
-                        if newBpm {
-                            self.restartBlinking()
-                        }
-                    }
-                }
-            }
+    func getBpmIndicatorColor() -> Color {
+        if showRetry || laserConfig.currentBpm == 0 {
+            return Color.red
+        } else if laserConfig.networkErrorCount > 0 {
+            return Color.orange
+        } else {
+            return Color.green
         }
-    }
-
-    func stopBpmUpdate() {
-        bpmUpdateTimer?.invalidate()
-        bpmUpdateTimer = nil
     }
 
     func changeLaserColor() {
@@ -274,11 +250,13 @@ struct HomeView: View {
     func incrementMultiplier() {
         laserConfig.bpmMultiplier *= 2
         laserConfig.setMultiplier(multiplier: laserConfig.bpmMultiplier)
+        laserConfig.restartBpmSyncTimer()
     }
 
     func decrementMultiplier() {
         laserConfig.bpmMultiplier = max(1 / 8, laserConfig.bpmMultiplier / 2)
         laserConfig.setMultiplier(multiplier: laserConfig.bpmMultiplier)
+        laserConfig.restartBpmSyncTimer()
     }
 
     func multiplierText() -> String {

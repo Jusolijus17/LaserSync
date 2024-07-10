@@ -15,6 +15,7 @@ class LaserConfig: ObservableObject {
     @Published var bpmMultiplier: Double = 1.0
     @Published var strobeModeEnabled: Bool = false
     @Published var activeSyncTypes = Set<String>()
+    @Published var includedPatterns: Set<String> = ["pattern1", "pattern2", "pattern3", "pattern4"]
     @Published var verticalAdjust: Double = 63
     @Published var horizontalAnimationEnabled: Bool = false
     @Published var horizontalAnimationSpeed: Double = 127
@@ -28,7 +29,10 @@ class LaserConfig: ObservableObject {
     @Published var olaPort: String
     
     // Other
-    private var patternSyncTimer: Timer?
+    private var bpmSyncTimer: Timer?
+    private var bpmUpdateTimer: Timer?
+    private var isRequestInProgress: Bool = false
+    @Published var networkErrorCount: Int = 0
     
     // Computed vars
     var baseUrl: String {
@@ -70,34 +74,11 @@ class LaserConfig: ObservableObject {
         self.serverPort = UserDefaults.standard.string(forKey: "serverPort") ?? "8080"
         self.olaIp = UserDefaults.standard.string(forKey: "olaIp") ?? ""
         self.olaPort = UserDefaults.standard.string(forKey: "olaPort") ?? "9090"
+        
+        self.startBpmUpdate()
     }
     
-    func toggleBpmSync(type: String) {
-        if activeSyncTypes.contains(type) {
-            activeSyncTypes.remove(type)
-            if type == "pattern" {
-                stopPatternSync()
-            }
-        } else {
-            activeSyncTypes.insert(type)
-            if type == "pattern" {
-                startPatternSync()
-            }
-        }
-        setSyncMode()
-    }
-    
-    private func startPatternSync() {
-        stopPatternSync()
-        patternSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) / bpmMultiplier, repeats: true) { _ in
-            self.currentPatternIndex = (self.currentPatternIndex + 1) % self.patterns.count
-        }
-    }
-
-    private func stopPatternSync() {
-        patternSyncTimer?.invalidate()
-        patternSyncTimer = nil
-    }
+    // MARK: - Connection settings
     
     func saveConnectionSettings() {
         UserDefaults.standard.set(serverIp, forKey: "serverIp")
@@ -127,7 +108,37 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: requestPort).resume()
     }
     
-    // Home
+    // MARK: - Home
+    
+    func startBpmUpdate() {
+        bpmUpdateTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
+            if !self.isRequestInProgress {
+                self.isRequestInProgress = true
+                self.getCurrentBpm() { newBpm, networkError in
+                    self.isRequestInProgress = false
+                    if networkError {
+                        self.networkErrorCount += 1
+                        if self.networkErrorCount >= 3 {
+                            self.stopBpmUpdate()
+                        }
+                    } else {
+                        self.networkErrorCount = 0
+                    }
+                }
+            }
+        }
+    }
+    
+    func restartBpmUpdate() {
+        self.networkErrorCount = 0
+        self.currentBpm = 0
+        self.startBpmUpdate()
+    }
+
+    func stopBpmUpdate() {
+        bpmUpdateTimer?.invalidate()
+        bpmUpdateTimer = nil
+    }
     
     func getCurrentBpm(newBpm: @escaping (Bool, Bool) -> Void) {
         guard let url = URL(string: "\(self.baseUrl)/get_bpm") else {
@@ -186,7 +197,7 @@ class LaserConfig: ObservableObject {
     }
 
     
-    // Color control
+    // MARK: - Color control
     
     func setColor(color: String? = nil) {
         guard let url = URL(string: "\(self.baseUrl)/set_color") else { return }
@@ -199,7 +210,7 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    // Pattern control
+    // MARK: - Pattern control
     
     func setPattern() {
         guard let url = URL(string: "\(self.baseUrl)/set_pattern") else { return }
@@ -212,7 +223,27 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    // Mode control
+    func togglePatternInclusion(name: String) {
+        if includedPatterns.contains(name) {
+            includedPatterns.remove(name)
+        } else {
+            includedPatterns.insert(name)
+        }
+        setPatternInclude()
+    }
+
+    func setPatternInclude() {
+        let patternList = patterns.map { ["name": $0.name, "include": includedPatterns.contains($0.name)] }
+        guard let url = URL(string: "\(self.baseUrl)/set_pattern_include") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["patterns": patternList]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    // MARK: - Mode control
     
     func setMode() {
         guard let url = URL(string: "\(self.baseUrl)/set_mode") else { return }
@@ -241,7 +272,7 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    // Advanced options
+    // MARK: - Advanced options
     
     func resetVerticalAdjust() {
         self.verticalAdjust = 63
@@ -286,7 +317,49 @@ class LaserConfig: ObservableObject {
         }
     }
     
-    // BPM sync
+    // MARK: - BPM sync
+    
+    func toggleBpmSync(type: String) {
+        if activeSyncTypes.contains(type) {
+            activeSyncTypes.remove(type)
+            if activeSyncTypes.isEmpty {
+                stopBpmSyncTimer()
+            }
+        } else {
+            activeSyncTypes.insert(type)
+            startBpmSyncTimer()
+        }
+        setSyncMode()
+    }
+    
+    private func startBpmSyncTimer() {
+        stopBpmSyncTimer()
+        bpmSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) * bpmMultiplier, repeats: true) { _ in
+            if self.activeSyncTypes.contains("pattern") {
+                let activePatterns = self.patterns.enumerated().filter { self.includedPatterns.contains($0.element.name) }
+                if !activePatterns.isEmpty {
+                    let currentActiveIndex = activePatterns.firstIndex(where: { $0.offset == self.currentPatternIndex }) ?? 0
+                    let nextActiveIndex = (currentActiveIndex + 1) % activePatterns.count
+                    self.currentPatternIndex = activePatterns[nextActiveIndex].offset
+                }
+            }
+            if self.activeSyncTypes.contains("color") {
+                self.currentColorIndex = (self.currentColorIndex + 1) % self.colors.count
+            }
+        }
+    }
+    
+    func restartBpmSyncTimer() {
+        stopBpmSyncTimer()
+        if !activeSyncTypes.isEmpty {
+            startBpmSyncTimer()
+        }
+    }
+
+    private func stopBpmSyncTimer() {
+        bpmSyncTimer?.invalidate()
+        bpmSyncTimer = nil
+    }
     
     func setMultiplier(multiplier: Double) {
         guard let url = URL(string: "\(self.baseUrl)/set_bpm_multiplier") else { return }

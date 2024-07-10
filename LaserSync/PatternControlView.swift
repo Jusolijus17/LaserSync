@@ -15,22 +15,32 @@ struct PatternControlView: View {
         VStack(spacing: 20) {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(style: .init(lineWidth: 5, lineJoin: .round))
-                .background(laserConfig.currentPattern.shape.padding(20))
+                .background {
+                    laserConfig.currentPattern.shape
+                        .foregroundStyle(laserConfig.currentColor)
+                        .padding(20)
+                }
                 .shadow(radius: 10)
                 .padding()
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
                 ForEach(0..<laserConfig.patterns.count, id: \.self) { index in
+                    let pattern = laserConfig.patterns[index]
                     Button(action: {
                         hapticFeedback()
-                        laserConfig.currentPatternIndex = index
-                        laserConfig.setPattern()
+                        if laserConfig.activeSyncTypes.contains("pattern") {
+                            laserConfig.togglePatternInclusion(name: pattern.name)
+                        } else {
+                            laserConfig.currentPatternIndex = index
+                            laserConfig.setPattern()
+                        }
                     }) {
                         laserConfig.patterns[index].shape
+                            .foregroundStyle(.white)
                             .padding(20)
                             .frame(height: 100)
                             .frame(maxWidth: .infinity)
-                            .background(laserConfig.currentPatternIndex == index ? Color.green : Color.gray)
+                            .background(getBackgroundColor(index))
                             .cornerRadius(10)
                             .shadow(radius: 5)
                     }
@@ -60,6 +70,18 @@ struct PatternControlView: View {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
     }
+    
+    func getBackgroundColor(_ index: Int) -> Color {
+        if laserConfig.currentPatternIndex == index && laserConfig.activeSyncTypes.contains("pattern") && laserConfig.includedPatterns.contains(laserConfig.patterns[index].name) {
+            return Color.green
+        } else if laserConfig.currentPatternIndex == index && !laserConfig.activeSyncTypes.contains("pattern") {
+            return Color.green
+        } else if laserConfig.activeSyncTypes.contains("pattern") && !laserConfig.includedPatterns.contains(laserConfig.patterns[index].name) {
+            return Color.gray.opacity(0.5)
+        } else {
+            return Color.gray
+        }
+    }
 }
 
 struct PatternControlView_Previews: PreviewProvider {
@@ -81,7 +103,7 @@ struct StraightLineShape: View {
                 path.move(to: CGPoint(x: 10, y: geometry.size.height / 2))
                 path.addLine(to: CGPoint(x: geometry.size.width - 10, y: geometry.size.height / 2))
             }
-            .stroke(Color.white, lineWidth: 5)
+            .stroke(lineWidth: 5)
         }
     }
 }
@@ -97,7 +119,7 @@ struct DashedLineShape: View {
                 path.move(to: CGPoint(x: (geometry.size.width / 3) * 2 + 5, y: geometry.size.height / 2))
                 path.addLine(to: CGPoint(x: geometry.size.width - 5, y: geometry.size.height / 2))
             }
-            .stroke(Color.white, lineWidth: 5)
+            .stroke(lineWidth: 5)
         }
     }
 }
@@ -109,7 +131,7 @@ struct DottedLineShape: View {
                 path.move(to: CGPoint(x: 5, y: geometry.size.height / 2))
                 path.addLine(to: CGPoint(x: geometry.size.width - 5, y: geometry.size.height / 2))
             }
-            .stroke(Color.white, style: StrokeStyle(lineWidth: 5, dash: [8, 13]))
+            .stroke(style: StrokeStyle(lineWidth: 5, dash: [8, 13]))
         }
     }
 }
@@ -132,7 +154,7 @@ struct WaveLineShape: View {
                                       control: CGPoint(x: i + 3 * waveLength / 4, y: midHeight))
                 }
             }
-            .stroke(Color.white, lineWidth: 5)
+            .stroke(lineWidth: 5)
         }
     }
 }
