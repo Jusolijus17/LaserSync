@@ -20,6 +20,12 @@ struct LaserColorView: View {
                 Rectangle()
                     .fill(laserConfig.currentColor)
                     .frame(maxWidth: .infinity, maxHeight: 300)
+                    .background {
+                        if laserConfig.currentColorName == "multicolor" {
+                            RoundedRectangle(cornerRadius: 20)
+                                .multicolor()
+                        }
+                    }
                     .overlay(content: {
                         ZStack {
                             Text("Tap to change")
@@ -39,13 +45,14 @@ struct LaserColorView: View {
             .padding(.horizontal, 20)
 
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
-                ForEach(0..<laserConfig.colors.count, id: \.self) { index in
+                ForEach(1..<laserConfig.colors.count, id: \.self) { index in
                     Button(action: {
                         hapticFeedback()
                         changeLaserColor(specificColorIndex: index)
                     }) {
-                        Rectangle()
+                        RoundedRectangle(cornerRadius: 10)
                             .fill(laserConfig.colors[index].color)
+                            .stroke(laserConfig.currentColorIndex == index ? Color.white : Color.clear, lineWidth: 3)
                             .frame(height: 100)
                             .overlay(content: {
                                 Text(laserConfig.colors[index].name.capitalized)
@@ -53,7 +60,6 @@ struct LaserColorView: View {
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.white)
                             })
-                            .cornerRadius(10)
                     }
                 }
             }
@@ -61,14 +67,17 @@ struct LaserColorView: View {
             
             Button(action: {
                 hapticFeedback()
-                changeLaserColor(specificColorIndex: -1)
+                changeLaserColor(specificColorIndex: 0)
             }) {
-                Text("Multicolor")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(Color.white)
-                    .foregroundColor(.black)
-                    .cornerRadius(10)
+                RoundedRectangle(cornerRadius: 10)
+                    .multicolor()
+                    .frame(height: 50)
+                    .overlay(content: {
+                        Text(laserConfig.colors[0].name.capitalized)
+                            .font(.title3)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    })
             }
             .padding(.horizontal, 20)
             
@@ -97,17 +106,11 @@ struct LaserColorView: View {
 
     func changeLaserColor(specificColorIndex: Int? = nil) {
         if let index = specificColorIndex {
-            if index == -1 {
-                laserConfig.currentColorIndex = 0
-                laserConfig.setColor(color: "multicolor")
-            } else {
-                laserConfig.currentColorIndex = index
-                laserConfig.setColor()
-            }
+            laserConfig.currentColorIndex = index
         } else {
             laserConfig.currentColorIndex = (laserConfig.currentColorIndex + 1) % laserConfig.colors.count
-            laserConfig.setColor()
         }
+        laserConfig.setColor()
     }
 }
 

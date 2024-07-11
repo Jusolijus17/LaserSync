@@ -15,6 +15,10 @@ struct HomeView: View {
     @State private var blinkingTimer: Timer?
     @State private var networkErrorCount = 0
     @State private var showRetry = false
+    @State private var isHorizontalAnimationBlinking = false
+    @State private var isVerticalAnimationBlinking = false
+    @State private var horizontalBlinkTimer: Timer?
+    @State private var verticalBlinkTimer: Timer?
 
     var body: some View {
         VStack(spacing: 20) {
@@ -58,6 +62,12 @@ struct HomeView: View {
                     Rectangle()
                         .fill(laserConfig.currentColor)
                         .frame(height: 150)
+                        .background {
+                            if laserConfig.currentColorName == "multicolor" {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .multicolor()
+                            }
+                        }
                         .overlay(content: {
                             ZStack {
                                 Text(laserConfig.currentColorName.capitalized)
@@ -184,6 +194,76 @@ struct HomeView: View {
                 .frame(maxWidth: .infinity)
                 .background(multiplierColor())
                 .cornerRadius(10)
+                
+                Button(action: {
+                    hapticFeedback()
+                    toggleHorizontalAnimation()
+                }) {
+                    Rectangle()
+                        .fill(isHorizontalAnimationBlinking ? Color.yellow : Color.gray)
+                        .frame(height: 150)
+                        .overlay(content: {
+                            ZStack {
+                                Text(laserConfig.horizontalAnimationEnabled ? "ON" : "OFF")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
+                                VStack {
+                                    Spacer()
+                                    Text("H-Animation")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                                .padding()
+                            }
+                        })
+                        .cornerRadius(10)
+                }
+                .onAppear {
+                    if laserConfig.horizontalAnimationEnabled {
+                        startHorizontalBlinking()
+                    } else {
+                        stopHorizontalBlinking()
+                    }
+                }
+                .onDisappear {
+                    stopHorizontalBlinking()
+                    stopVerticalBlinking()
+                }
+
+                Button(action: {
+                    hapticFeedback()
+                    toggleVerticalAnimation()
+                }) {
+                    Rectangle()
+                        .fill(isVerticalAnimationBlinking ? Color.yellow : Color.gray)
+                        .frame(height: 150)
+                        .overlay(content: {
+                            ZStack {
+                                Text(laserConfig.verticalAnimationEnabled ? "ON" : "OFF")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
+                                VStack {
+                                    Spacer()
+                                    Text("V-Animation")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                                .padding()
+                            }
+                        })
+                        .cornerRadius(10)
+                }
+                .onAppear {
+                    if laserConfig.verticalAnimationEnabled {
+                        startVerticalBlinking()
+                    } else {
+                        stopVerticalBlinking()
+                    }
+                }
             }
             .padding(.horizontal, 20)
             
@@ -246,6 +326,53 @@ struct HomeView: View {
         laserConfig.currentMode = laserConfig.currentMode == "manual" ? "blackout" : "manual"
         laserConfig.setMode()
     }
+    
+    func startHorizontalBlinking() {
+        isHorizontalAnimationBlinking = true
+        horizontalBlinkTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            isHorizontalAnimationBlinking.toggle()
+        }
+    }
+
+    func stopHorizontalBlinking() {
+        horizontalBlinkTimer?.invalidate()
+        horizontalBlinkTimer = nil
+        isHorizontalAnimationBlinking = false
+    }
+
+    func startVerticalBlinking() {
+        isVerticalAnimationBlinking = true
+        verticalBlinkTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
+            isVerticalAnimationBlinking.toggle()
+        }
+    }
+
+    func stopVerticalBlinking() {
+        verticalBlinkTimer?.invalidate()
+        verticalBlinkTimer = nil
+        isVerticalAnimationBlinking = false
+    }
+
+    func toggleHorizontalAnimation() {
+        laserConfig.horizontalAnimationEnabled.toggle()
+        if laserConfig.horizontalAnimationEnabled {
+            startHorizontalBlinking()
+        } else {
+            stopHorizontalBlinking()
+        }
+        laserConfig.setHorizontalAnimation()
+    }
+
+    func toggleVerticalAnimation() {
+        laserConfig.verticalAnimationEnabled.toggle()
+        if laserConfig.verticalAnimationEnabled {
+            startVerticalBlinking()
+        } else {
+            stopVerticalBlinking()
+        }
+        laserConfig.setVerticalAnimation()
+    }
+
 
     func incrementMultiplier() {
         laserConfig.bpmMultiplier *= 2

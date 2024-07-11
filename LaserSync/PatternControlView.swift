@@ -17,6 +17,7 @@ struct PatternControlView: View {
                 .strokeBorder(style: .init(lineWidth: 5, lineJoin: .round))
                 .background {
                     laserConfig.currentPattern.shape
+                        .multicolor(isEnabled: laserConfig.currentColorIndex == 0)
                         .foregroundStyle(laserConfig.currentColor)
                         .padding(20)
                 }

@@ -59,6 +59,7 @@ class LaserConfig: ObservableObject {
     ]
     
     var colors: [(name: String, color: Color)] = [
+        ("multicolor", .clear),
         ("red", .red),
         ("blue", .blue),
         ("green", .green),
