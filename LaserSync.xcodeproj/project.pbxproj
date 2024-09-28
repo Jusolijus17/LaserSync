@@ -12,6 +12,9 @@
 		3D78D3842C37819F00123283 /* ModeControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3832C37819F00123283 /* ModeControlView.swift */; };
 		3D78D3862C3781BF00123283 /* AdvancedSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3852C3781BF00123283 /* AdvancedSettingsView.swift */; };
 		3D78D38A2C37AF6900123283 /* HomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3892C37AF6900123283 /* HomeView.swift */; };
+		3D953A2B2CA3B93900E66C94 /* Objects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D953A2A2CA3B93900E66C94 /* Objects.swift */; };
+		3D953A2D2CA4E2B600E66C94 /* TapDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D953A2C2CA4E2B600E66C94 /* TapDetector.swift */; };
+		3D953A2F2CA60C9200E66C94 /* CustomSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D953A2E2CA60C9200E66C94 /* CustomSliderView.swift */; };
 		3DA7ADAD2C3A3C6100D52F38 /* LaserConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */; };
 		3DF733472C3F7F3700DF9C83 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF733462C3F7F3700DF9C83 /* Extensions.swift */; };
 		3DFD8A8F2C377AB100A8B186 /* LaserSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DFD8A8E2C377AB100A8B186 /* LaserSyncApp.swift */; };
@@ -26,6 +29,9 @@
 		3D78D3832C37819F00123283 /* ModeControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeControlView.swift; sourceTree = "<group>"; };
 		3D78D3852C3781BF00123283 /* AdvancedSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AdvancedSettingsView.swift; sourceTree = "<group>"; };
 		3D78D3892C37AF6900123283 /* HomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeView.swift; sourceTree = "<group>"; };
+		3D953A2A2CA3B93900E66C94 /* Objects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Objects.swift; sourceTree = "<group>"; };
+		3D953A2C2CA4E2B600E66C94 /* TapDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapDetector.swift; sourceTree = "<group>"; };
+		3D953A2E2CA60C9200E66C94 /* CustomSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSliderView.swift; sourceTree = "<group>"; };
 		3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserConfig.swift; sourceTree = "<group>"; };
 		3DF733462C3F7F3700DF9C83 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		3DFD8A8B2C377AB100A8B186 /* LaserSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaserSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -75,7 +81,10 @@
 				3DFD8A922C377AB300A8B186 /* Assets.xcassets */,
 				3DFD8A942C377AB300A8B186 /* Preview Content */,
 				3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */,
+				3D953A2A2CA3B93900E66C94 /* Objects.swift */,
 				3DF733462C3F7F3700DF9C83 /* Extensions.swift */,
+				3D953A2C2CA4E2B600E66C94 /* TapDetector.swift */,
+				3D953A2E2CA60C9200E66C94 /* CustomSliderView.swift */,
 			);
 			path = LaserSync;
 			sourceTree = "<group>";
@@ -160,10 +169,13 @@
 			files = (
 				3D78D3842C37819F00123283 /* ModeControlView.swift in Sources */,
 				3DF733472C3F7F3700DF9C83 /* Extensions.swift in Sources */,
+				3D953A2F2CA60C9200E66C94 /* CustomSliderView.swift in Sources */,
 				3DFD8A912C377AB100A8B186 /* ContentView.swift in Sources */,
 				3D78D3822C37817500123283 /* PatternControlView.swift in Sources */,
 				3D78D3802C37812700123283 /* LaserColorView.swift in Sources */,
 				3DFD8A8F2C377AB100A8B186 /* LaserSyncApp.swift in Sources */,
+				3D953A2B2CA3B93900E66C94 /* Objects.swift in Sources */,
+				3D953A2D2CA4E2B600E66C94 /* TapDetector.swift in Sources */,
 				3D78D38A2C37AF6900123283 /* HomeView.swift in Sources */,
 				3DA7ADAD2C3A3C6100D52F38 /* LaserConfig.swift in Sources */,
 				3D78D3862C3781BF00123283 /* AdvancedSettingsView.swift in Sources */,
