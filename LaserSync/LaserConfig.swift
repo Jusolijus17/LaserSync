@@ -40,6 +40,7 @@ class LaserConfig: ObservableObject {
     private var bpmUpdateTimer: Timer?
     private var isRequestInProgress: Bool = false
     @Published var networkErrorCount: Int = 0
+    @Published var successfullBpmFetch: Bool = false
     
     // Computed vars
     var baseUrl: String {
@@ -113,6 +114,7 @@ class LaserConfig: ObservableObject {
         UserDefaults.standard.set(serverPort, forKey: "serverPort")
         UserDefaults.standard.set(olaIp, forKey: "olaIp")
         UserDefaults.standard.set(olaPort, forKey: "olaPort")
+        updateSocketConfiguration()
         self.setOlaAddress()
     }
     
@@ -142,14 +144,16 @@ class LaserConfig: ObservableObject {
         bpmUpdateTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
             if !self.isRequestInProgress {
                 self.isRequestInProgress = true
-                self.getCurrentBpm() { newBpm, networkError in
+                self.getCurrentBpm() { _, networkError in
                     self.isRequestInProgress = false
                     if networkError {
+                        self.successfullBpmFetch = false
                         self.networkErrorCount += 1
                         if self.networkErrorCount >= 3 {
                             self.stopBpmUpdate()
                         }
                     } else {
+                        self.successfullBpmFetch = true
                         self.networkErrorCount = 0
                     }
                 }
@@ -342,25 +346,33 @@ class LaserConfig: ObservableObject {
     
     // MARK: - Mode control
     
-    func toggleMHMode() {
-        if mHMode == .auto {
-            mHMode = .manual
+    func toggleMHMode(_ custom: MovingHeadMode? = nil) {
+        if let custom {
+            mHMode = custom
         } else {
-            mHMode = .auto
+            if mHMode == .auto {
+                mHMode = .manual
+            } else {
+                mHMode = .auto
+            }
         }
         setMHMode()
     }
     
-    func toggleMHScene() {
-        switch mhScene {
-        case .slow:
-            mhScene = .medium
-        case .medium:
-            mhScene = .fast
-        case .fast:
-            mhScene = .off
-        case .off:
-            mhScene = .slow
+    func toggleMHScene(_ custom: MovingHeadScene? = nil) {
+        if let custom {
+            self.mhScene = custom
+        } else {
+            switch mhScene {
+            case .slow:
+                mhScene = .medium
+            case .medium:
+                mhScene = .fast
+            case .fast:
+                mhScene = .off
+            case .off:
+                mhScene = .slow
+            }
         }
         setMHScene()
     }

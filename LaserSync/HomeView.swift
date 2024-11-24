@@ -25,9 +25,7 @@ struct HomeView: View {
     @State private var timer: Timer?
     
     var body: some View {
-        VStack(spacing: 20) {
-            
-            Spacer()
+        VStack {
             
             HStack {
                 Text("\(laserConfig.currentBpm) BPM")
@@ -46,14 +44,13 @@ struct HomeView: View {
                     .opacity(isBlinking || laserConfig.currentBpm == 0 ? 1.0 : 0.0)
             }
             
-            if showRetry {
-                Button(action: {
-                    laserConfig.restartBpmUpdate()
-                    showRetry = false
-                }) {
-                    Label("Retry", systemImage: "arrow.clockwise.circle")
-                }
+            Button(action: {
+                laserConfig.restartBpmUpdate()
+                showRetry = false
+            }) {
+                Label("Retry", systemImage: "arrow.clockwise.circle")
             }
+            .opacity(showRetry ? 1 : 0)
 
             
             TabView {
@@ -183,6 +180,12 @@ struct HomeView: View {
                             .foregroundStyle(.white)
                     )
                 }
+                .onLongPressGesture {
+                    hapticFeedback()
+                    laserConfig.toggleMHMode(.blackout)
+                    laserConfig.toggleMHScene(.off)
+                    laserConfig.mHDimmer = 0
+                }
                 
                 // Scene
                 SquareButton(title: "Scene", action: {
@@ -203,6 +206,10 @@ struct HomeView: View {
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
                     )
+                }
+                .onLongPressGesture {
+                    hapticFeedback()
+                    laserConfig.toggleMHScene(.off)
                 }
             }
             
@@ -415,10 +422,10 @@ struct HomeView: View {
     }
     
     func getBpmIndicatorColor() -> Color {
-        if showRetry || laserConfig.currentBpm == 0 {
-            return Color.red
-        } else if laserConfig.networkErrorCount > 0 {
+        if !laserConfig.successfullBpmFetch && !showRetry {
             return Color.orange
+        } else if showRetry {
+            return Color.red
         } else {
             return Color.green
         }
@@ -557,12 +564,9 @@ struct SquareButton: View {
     var action: () -> Void
     var backgroundColor: Color = Color.gray
     var content: () -> AnyView
-    
+
     var body: some View {
-        Button(action: {
-            hapticFeedback()
-            action()
-        }) {
+        ZStack { // Utiliser un conteneur ZStack au lieu d'un Button
             Rectangle()
                 .fill(backgroundColor)
                 .frame(height: 150)
@@ -581,8 +585,12 @@ struct SquareButton: View {
                 })
                 .cornerRadius(10)
         }
+        .onTapGesture {
+            hapticFeedback()
+            action()
+        } // Action principale
     }
-    
+
     func hapticFeedback() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()

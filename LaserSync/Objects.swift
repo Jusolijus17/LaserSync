@@ -7,11 +7,26 @@
 
 import Foundation
 
-enum Light: String, Codable {
+enum Light: String, Codable, CaseIterable, Identifiable {
     case laser
     case movingHead
     case both
     case none
+    
+    var id: String { rawValue }
+    
+    static var displayableCases: [Light] {
+        return [.laser, .movingHead]
+    }
+    
+    var rawValue: String {
+        switch self {
+        case .laser: return "Laser"
+        case .movingHead: return "Moving Head"
+        case .both: return "Both"
+        case .none: return "None"
+        }
+    }
 }
 
 enum MovingHeadMode: String, Codable {
