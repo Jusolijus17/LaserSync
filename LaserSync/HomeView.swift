@@ -19,11 +19,13 @@ struct HomeView: View {
     @State private var isVerticalAnimationBlinking = false
     @State private var horizontalBlinkTimer: Timer?
     @State private var verticalBlinkTimer: Timer?
-
+    
+    @State var touchDownTime: Date?
+    @State var isPressed = false
+    @State private var timer: Timer?
+    
     var body: some View {
-        VStack(spacing: 20) {
-            
-            Spacer()
+        VStack {
             
             HStack {
                 Text("\(laserConfig.currentBpm) BPM")
@@ -42,17 +44,210 @@ struct HomeView: View {
                     .opacity(isBlinking || laserConfig.currentBpm == 0 ? 1.0 : 0.0)
             }
             
-            if showRetry {
+            Button(action: {
+                laserConfig.restartBpmUpdate()
+                showRetry = false
+            }) {
+                Label("Retry", systemImage: "arrow.clockwise.circle")
+            }
+            .opacity(showRetry ? 1 : 0)
+
+            
+            TabView {
+                laserControlGrid
+                movingHeadControlGrid
+            }
+            .tabViewStyle(.page)
+            .indexViewStyle(.page)
+        }
+        .background(Color.black.edgesIgnoringSafeArea(.all))
+        .onChange(of: laserConfig.currentBpm) {
+            if laserConfig.currentBpm != 0 {
+                self.restartBlinking()
+            }
+        }
+    }
+    
+    var movingHeadControlGrid: some View {
+        VStack(spacing: 20) {
+            Text("Moving Head")
+                .foregroundStyle(.white)
+                .font(.title2)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 2)
+                .background {
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(.cyan)
+                }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
+                
+                // Color
                 Button(action: {
-                    laserConfig.restartBpmUpdate()
-                    showRetry = false
+                    hapticFeedback()
+                    changeMHColor()
                 }) {
-                    Label("Retry", systemImage: "arrow.clockwise.circle")
+                    Rectangle()
+                        .fill(laserConfig.currentMHColor)
+                        .frame(height: 150)
+                        .background {
+                            if laserConfig.currentMHColorName == "auto" {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .multicolor()
+                            }
+                        }
+                        .overlay(content: {
+                            ZStack {
+                                Text(laserConfig.currentMHColorName.capitalized)
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white)
+                                VStack {
+                                    Spacer()
+                                    Text("Color")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                                .padding()
+                            }
+                        })
+                        .cornerRadius(10)
+                }
+                
+                // Manual Strobe
+                Button(action: {
+                }) {
+                    Rectangle()
+                        .fill(isPressed ? .white : .gray)
+                        .frame(height: 150)
+                        .overlay(content: {
+                            ZStack {
+                                Image(systemName: "exclamationmark.warninglight")
+                                    .font(.largeTitle)
+                                    .foregroundStyle(.white)
+                                VStack {
+                                    Spacer()
+                                    Text("Strobe")
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                        .padding()
+                                }
+                            }
+                        })
+                        .cornerRadius(10)
+                        .simultaneousGesture(
+                            DragGesture(minimumDistance: 0)
+                                .onChanged({ value in
+                                    if touchDownTime == nil {
+                                        touchDownTime = value.time
+                                        hapticFeedback()
+                                        laserConfig.startMHStrobe()
+                                        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                                            isPressed.toggle()
+                                        }
+                                    }
+                                })
+                                .onEnded({ value in
+                                    laserConfig.stopMHStrobe()
+                                    if let touchDownTime,
+                                       value.time.timeIntervalSince(touchDownTime) >= 1 { }
+                                    hapticFeedback()
+                                    self.touchDownTime = nil
+                                    isPressed = false
+                                    timer?.invalidate()
+                                    timer = nil
+                                })
+                        )
+                }
+                
+                // Mode
+                SquareButton(title: "Mode", action: {
+                    laserConfig.toggleMHMode()
+                }, backgroundColor: {
+                    if laserConfig.mHMode == .blackout {
+                        return Color.gray
+                    } else if laserConfig.mHMode == .auto {
+                        return Color.green
+                    } else {
+                        return Color.yellow
+                    }
+                }()) {
+                    AnyView(
+                        Text(laserConfig.mHMode.rawValue.capitalized)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
+                }
+                .onLongPressGesture {
+                    hapticFeedback()
+                    laserConfig.toggleMHMode(.blackout)
+                    laserConfig.toggleMHScene(.off)
+                    laserConfig.mHDimmer = 0
+                }
+                
+                // Scene
+                SquareButton(title: "Scene", action: {
+                    laserConfig.toggleMHScene()
+                }, backgroundColor: {
+                    if laserConfig.mhScene == .slow {
+                        return .blue
+                    } else if laserConfig.mhScene == .medium {
+                        return .orange
+                    } else if laserConfig.mhScene == .fast {
+                        return .red
+                    }
+                    return .gray
+                }()) {
+                    AnyView(
+                        Text(laserConfig.mhScene.rawValue.capitalized)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
+                }
+                .onLongPressGesture {
+                    hapticFeedback()
+                    laserConfig.toggleMHScene(.off)
                 }
             }
             
-            Spacer()
-
+            CustomSliderView(sliderValue: $laserConfig.mHDimmer, title: "Brightness")
+                .onChange(of: laserConfig.mHDimmer) { _, newValue in
+                    if newValue > 0 {
+                        laserConfig.mHMode = .manual
+                    } else {
+                        laserConfig.mHMode = .blackout
+                    }
+                    laserConfig.setMHDimmer()
+                    if newValue == 0 || newValue == 100 {
+                        hapticFeedback()
+                    }
+                }
+            
+            CustomSliderView(sliderValue: $laserConfig.mHStrobe, title: "Strobe")
+                .onChange(of: laserConfig.mHStrobe) { _, newValue in
+                    laserConfig.setMHStrobe()
+                    if newValue == 0 || newValue == 100 {
+                        hapticFeedback()
+                    }
+                }
+        }
+        .padding(.horizontal, 20)
+    }
+    
+    var laserControlGrid: some View {
+        VStack(spacing: 20) {
+            Text("Laser")
+                .foregroundStyle(.white)
+                .font(.title2)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 2)
+                .background {
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(.cyan)
+                }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
                 // Color
                 Button(action: {
@@ -60,17 +255,17 @@ struct HomeView: View {
                     changeLaserColor()
                 }) {
                     Rectangle()
-                        .fill(laserConfig.currentColor)
+                        .fill(laserConfig.currentLaserColor)
                         .frame(height: 150)
                         .background {
-                            if laserConfig.currentColorName == "multicolor" {
+                            if laserConfig.currentLaserColorName == "multicolor" {
                                 RoundedRectangle(cornerRadius: 10)
                                     .multicolor()
                             }
                         }
                         .overlay(content: {
                             ZStack {
-                                Text(laserConfig.currentColorName.capitalized)
+                                Text(laserConfig.currentLaserColorName.capitalized)
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.white)
@@ -88,56 +283,26 @@ struct HomeView: View {
                 }
                 
                 // Pattern
-                Button(action: {
-                    hapticFeedback()
+                SquareButton(title: "Pattern") {
                     changePattern()
-                }) {
-                    Rectangle()
-                        .fill(Color.gray)
-                        .frame(height: 150)
-                        .overlay(content: {
-                            ZStack {
-                                laserConfig.currentPattern.shape
-                                    .foregroundStyle(.white)
-                                    .frame(width: 100, height: 50)
-                                VStack {
-                                    Spacer()
-                                    Text("Pattern")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white.opacity(0.5))
-                                        .padding()
-                                }
-                            }
-                        })
-                        .cornerRadius(10)
+                } content: {
+                    AnyView(
+                        laserConfig.currentPattern.shape
+                            .foregroundStyle(.white)
+                            .frame(width: 100, height: 50)
+                    )
                 }
                 
                 // Mode
-                Button(action: {
-                    hapticFeedback()
+                SquareButton(title: "Mode", action: {
                     toggleLaserMode()
-                }) {
-                    Rectangle()
-                        .fill(laserConfig.currentMode == "manual" ? Color.green : Color.gray)
-                        .frame(height: 150)
-                        .overlay(content: {
-                            ZStack {
-                                Text(laserConfig.currentMode.capitalized)
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.white)
-                                VStack {
-                                    Spacer()
-                                    Text("Mode")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                                .padding()
-                            }
-                        })
-                        .cornerRadius(10)
+                }, backgroundColor: laserConfig.currentMode == "manual" ? Color.green : Color.gray) {
+                    AnyView(
+                        Text(laserConfig.currentMode.capitalized)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
                 }
                 
                 // BPM Multiplier
@@ -195,30 +360,15 @@ struct HomeView: View {
                 .background(multiplierColor())
                 .cornerRadius(10)
                 
-                Button(action: {
-                    hapticFeedback()
+                SquareButton(title: "H-Animation", action: {
                     toggleHorizontalAnimation()
-                }) {
-                    Rectangle()
-                        .fill(isHorizontalAnimationBlinking ? Color.yellow : Color.gray)
-                        .frame(height: 150)
-                        .overlay(content: {
-                            ZStack {
-                                Text(laserConfig.horizontalAnimationEnabled ? "ON" : "OFF")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.white)
-                                VStack {
-                                    Spacer()
-                                    Text("H-Animation")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                                .padding()
-                            }
-                        })
-                        .cornerRadius(10)
+                }, backgroundColor: isHorizontalAnimationBlinking ? Color.yellow : Color.gray) {
+                    AnyView(
+                        Text(laserConfig.horizontalAnimationEnabled ? "ON" : "OFF")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
                 }
                 .onAppear {
                     if laserConfig.horizontalAnimationEnabled {
@@ -231,31 +381,16 @@ struct HomeView: View {
                     stopHorizontalBlinking()
                     stopVerticalBlinking()
                 }
-
-                Button(action: {
-                    hapticFeedback()
+                
+                SquareButton(title: "V-Animation", action: {
                     toggleVerticalAnimation()
-                }) {
-                    Rectangle()
-                        .fill(isVerticalAnimationBlinking ? Color.yellow : Color.gray)
-                        .frame(height: 150)
-                        .overlay(content: {
-                            ZStack {
-                                Text(laserConfig.verticalAnimationEnabled ? "ON" : "OFF")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.white)
-                                VStack {
-                                    Spacer()
-                                    Text("V-Animation")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                                .padding()
-                            }
-                        })
-                        .cornerRadius(10)
+                }, backgroundColor: isVerticalAnimationBlinking ? Color.yellow : Color.gray) {
+                    AnyView(
+                        Text(laserConfig.verticalAnimationEnabled ? "ON" : "OFF")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
                 }
                 .onAppear {
                     if laserConfig.verticalAnimationEnabled {
@@ -266,14 +401,6 @@ struct HomeView: View {
                 }
             }
             .padding(.horizontal, 20)
-            
-            Spacer()
-        }
-        .background(Color.black.edgesIgnoringSafeArea(.all))
-        .onChange(of: laserConfig.currentBpm) {
-            if laserConfig.currentBpm != 0 {
-                self.restartBlinking()
-            }
         }
     }
     
@@ -295,10 +422,10 @@ struct HomeView: View {
     }
     
     func getBpmIndicatorColor() -> Color {
-        if showRetry || laserConfig.currentBpm == 0 {
-            return Color.red
-        } else if laserConfig.networkErrorCount > 0 {
+        if !laserConfig.successfullBpmFetch && !showRetry {
             return Color.orange
+        } else if showRetry {
+            return Color.red
         } else {
             return Color.green
         }
@@ -307,9 +434,18 @@ struct HomeView: View {
     func changeLaserColor() {
         var newColorIndex: Int
         repeat {
-            newColorIndex = Int.random(in: 0..<laserConfig.colors.count)
-        } while newColorIndex == laserConfig.currentColorIndex
-        laserConfig.currentColorIndex = newColorIndex
+            newColorIndex = Int.random(in: 0..<laserConfig.laserColors.count)
+        } while newColorIndex == laserConfig.currentLaserColorIndex
+        laserConfig.currentLaserColorIndex = newColorIndex
+        laserConfig.setColor()
+    }
+    
+    func changeMHColor() {
+        var newColorIndex: Int
+        repeat {
+            newColorIndex = Int.random(in: 0..<laserConfig.laserColors.count)
+        } while newColorIndex == laserConfig.currentMHColorIndex
+        laserConfig.currentMHColorIndex = newColorIndex
         laserConfig.setColor()
     }
 
@@ -417,6 +553,44 @@ struct HomeView: View {
         }
     }
     
+    func hapticFeedback() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
+}
+
+struct SquareButton: View {
+    var title: String
+    var action: () -> Void
+    var backgroundColor: Color = Color.gray
+    var content: () -> AnyView
+
+    var body: some View {
+        ZStack { // Utiliser un conteneur ZStack au lieu d'un Button
+            Rectangle()
+                .fill(backgroundColor)
+                .frame(height: 150)
+                .overlay(content: {
+                    ZStack {
+                        content()
+                        VStack {
+                            Spacer()
+                            Text(title)
+                                .font(.title2)
+                                .fontWeight(.semibold)
+                                .foregroundStyle(.white.opacity(0.5))
+                                .padding()
+                        }
+                    }
+                })
+                .cornerRadius(10)
+        }
+        .onTapGesture {
+            hapticFeedback()
+            action()
+        } // Action principale
+    }
+
     func hapticFeedback() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()

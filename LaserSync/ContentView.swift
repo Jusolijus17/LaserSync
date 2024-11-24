@@ -31,7 +31,7 @@ struct ContentView: View {
                     Label("Mode", systemImage: "slider.horizontal.3")
                 }
             
-            AdvancedSettingsView()
+            SettingsView()
                 .tabItem {
                     Label("Settings", systemImage: "gear")
                 }
