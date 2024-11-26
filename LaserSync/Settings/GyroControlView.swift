@@ -17,13 +17,13 @@ struct GyroControlView: View {
     var body: some View {
         VStack {
             Spacer()
-            
+
             VStack(spacing: 10) {
-                // Utilisation des valeurs directement depuis MotionManager
+                // Affichage des valeurs de pan et tilt
                 Text("Pan (Yaw): \(motionManager.pan, specifier: "%.2f")°")
                 Text("Tilt (Pitch): \(motionManager.tilt, specifier: "%.2f")°")
             }
-            
+
             GeometryReader { geometry in
                 ZStack {
                     gridWithAxes(in: geometry.size)
@@ -31,16 +31,25 @@ struct GyroControlView: View {
                 }
             }
             .frame(height: 200)
+            .padding([.top, .horizontal])
+
+            // Switch pour inverser les commandes
+            Toggle(isOn: $motionManager.isInverted) {
+                Text("Invert controls").font(.headline)
+            }
             .padding()
+            .toggleStyle(SwitchToggleStyle(tint: .blue))
             
             Spacer()
-            
+
+            // Bouton pour réinitialiser la position
             Button {
                 resetPosition()
             } label: {
                 Text("Reset position")
             }
-            
+
+            // Bouton pour démarrer ou arrêter la détection
             Button(action: {
                 if isDetecting {
                     stopMotionUpdates()
@@ -73,8 +82,21 @@ struct GyroControlView: View {
         let width = size.width
         let height = size.height
 
-        let xPosition = width / 2 + CGFloat(motionManager.pan / motionManager.panLimit * (width / 2 - 10))
-        let yPosition = height / 2 - CGFloat(motionManager.tilt / motionManager.tiltLimit * (height / 2 - 10))
+        // Calculer les positions X et Y pour afficher le cercle
+        let halfWidth = width / 2
+        let halfHeight = height / 2
+
+        let currentPan = motionManager.pan
+        let currentTilt = motionManager.tilt
+
+        let adjustedPan = currentPan / 180.0 // Normaliser pan dans [-1, 1]
+        let adjustedTilt = currentTilt / 90.0 // Normaliser tilt dans [-1, 1]
+
+        let xOffset = CGFloat(adjustedPan * (halfWidth - 10))
+        let yOffset = CGFloat(adjustedTilt * (halfHeight - 10))
+
+        let xPosition = halfWidth + xOffset
+        let yPosition = halfHeight - yOffset
 
         return Circle()
             .frame(width: 20, height: 20)
