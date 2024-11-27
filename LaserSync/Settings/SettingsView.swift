@@ -9,6 +9,7 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var motionManager = MotionManager()
+    @StateObject private var roomModel = RoomModel()
     
     var body: some View {
         NavigationView {
@@ -19,9 +20,13 @@ struct SettingsView: View {
                         settingsRow(title: "Laser", imageName: "laser_icon")
                     }
                     
-                    NavigationLink(destination: MovingHeadSettings().environmentObject(motionManager)) {
-                        settingsRow(title: "Moving Head", imageName: "moving_head_icon")
-                    }
+                    NavigationLink(destination:
+                                    MovingHeadSettings()
+                        .environmentObject(motionManager)
+                        .environmentObject(roomModel)
+                    ) {
+                            settingsRow(title: "Moving Head", imageName: "moving_head_icon")
+                        }
                 }
                 .padding(.top, 20)
                 .padding(.horizontal, 16)
