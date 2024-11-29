@@ -10,13 +10,13 @@ import SwiftUI
 class LaserConfig: ObservableObject {
     @Published var currentLaserColorIndex: Int = 0
     @Published var currentMHColorIndex: Int = 0
-    @Published var currentPatternIndex: Int = 0
-    @Published var currentMode: String = "auto"
+    @Published var currentLaserPattern: LaserPattern = .straight
+    @Published var laserMode: LaserMode = .auto
     @Published var currentBpm: Int = 0
     @Published var bpmMultiplier: Double = 1.0
     @Published var strobeModeEnabled: Bool = false
     @Published var activeSyncTypes = Set<String>()
-    @Published var includedPatterns: Set<String> = ["pattern1", "pattern2", "pattern3", "pattern4"]
+    @Published var includedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
     @Published var verticalAdjust: Double = 63
     @Published var horizontalAnimationEnabled: Bool = false
     @Published var horizontalAnimationSpeed: Double = 127
@@ -56,47 +56,17 @@ class LaserConfig: ObservableObject {
     }
     
     var currentLaserColorName: String {
-        return laserColors[currentLaserColorIndex].name
+        return laserColors[currentLaserColorIndex].rawValue
     }
     
     var currentMHColorName: String {
-        return mHColors[currentMHColorIndex].name
+        return mHColors[currentMHColorIndex].rawValue
     }
     
-    var currentPattern: Pattern {
-        return patterns[currentPatternIndex]
-    }
+    var laserColors: [LaserColor] = LaserColor.allCases
+    var laserPatterns: [LaserPattern] = LaserPattern.allCases
     
-    var patterns: [Pattern] = [
-        Pattern(name: "pattern1", shape: AnyView(StraightLineShape())),
-        Pattern(name: "pattern2", shape: AnyView(DashedLineShape())),
-        Pattern(name: "pattern3", shape: AnyView(DottedLineShape())),
-        Pattern(name: "pattern4", shape: AnyView(WaveLineShape()))
-    ]
-    
-    var laserColors: [(name: String, color: Color)] = [
-        ("multicolor", .clear),
-        ("red", .red),
-        ("blue", .blue),
-        ("green", .green),
-        ("pink", .pink),
-        ("cyan", .cyan),
-        ("yellow", .yellow)
-    ]
-    
-    var mHColors: [(name: String, color: Color)] = [
-        ("auto", .clear),
-        ("red", .red),
-        ("blue", .blue),
-        ("green", .green),
-        ("pink", .pink),
-        ("cyan", .cyan),
-        ("yellow", .yellow),
-        ("orange", .orange),
-        ("white", .white)
-    ]
-    
-    var modes = ["auto", "manual", "sound", "blackout"]
+    var mHColors: [MovingHeadColor] = MovingHeadColor.allCases
     
     init() {
         self.serverIp = UserDefaults.standard.string(forKey: "serverIp") ?? ""
@@ -318,23 +288,23 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["pattern": self.currentPattern.name]
+        let body = ["pattern": self.currentLaserPattern.rawValue]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func togglePatternInclusion(name: String) {
-        if includedPatterns.contains(name) {
-            includedPatterns.remove(name)
+    func togglePatternInclusion(pattern: LaserPattern) {
+        if includedPatterns.contains(pattern) {
+            includedPatterns.remove(pattern)
         } else {
-            includedPatterns.insert(name)
+            includedPatterns.insert(pattern)
         }
         setPatternInclude()
     }
 
     func setPatternInclude() {
-        let patternList = patterns.map { ["name": $0.name, "include": includedPatterns.contains($0.name)] }
+        let patternList = laserPatterns.map { ["name": $0.rawValue, "include": includedPatterns.contains($0)] }
         guard let url = URL(string: "\(self.baseUrl)/set_pattern_include") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -382,7 +352,7 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["mode": self.currentMode]
+        let body = ["mode": self.laserMode.rawValue]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -540,12 +510,7 @@ class LaserConfig: ObservableObject {
         stopBpmSyncTimer()
         bpmSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) * bpmMultiplier, repeats: true) { _ in
             if self.activeSyncTypes.contains("pattern") {
-                let activePatterns = self.patterns.enumerated().filter { self.includedPatterns.contains($0.element.name) }
-                if !activePatterns.isEmpty {
-                    let currentActiveIndex = activePatterns.firstIndex(where: { $0.offset == self.currentPatternIndex }) ?? 0
-                    let nextActiveIndex = (currentActiveIndex + 1) % activePatterns.count
-                    self.currentPatternIndex = activePatterns[nextActiveIndex].offset
-                }
+                self.currentLaserPattern = LaserPattern.allCases.randomElement()!
             }
             if self.activeSyncTypes.contains("color") {
                 self.currentLaserColorIndex = (self.currentLaserColorIndex + 1) % self.laserColors.count

@@ -14,24 +14,24 @@ struct ModeControlView: View {
         VStack(spacing: 20) {
             Spacer()
             
-            Text(laserConfig.currentMode.capitalized)
+            Text(laserConfig.laserMode.rawValue.capitalized)
                 .font(.largeTitle)
                 .foregroundColor(.white)
             
             Spacer()
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
-                ForEach(laserConfig.modes, id: \.self) { mode in
+                ForEach(LaserMode.allCases) { mode in
                     Button(action: {
                         hapticFeedback()
                         changeLaserMode(mode: mode)
                     }) {
-                        Text(mode.capitalized)
+                        Text(mode.rawValue.capitalized)
                             .font(.title2)
                             .fontWeight(.semibold)
                             .frame(height: 150)
                             .frame(maxWidth: .infinity)
-                            .background(laserConfig.currentMode == mode ? Color.green : Color.gray)
+                            .background(laserConfig.laserMode == mode ? Color.green : Color.gray)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                             .shadow(radius: 5)
@@ -59,8 +59,8 @@ struct ModeControlView: View {
         }
     }
     
-    func changeLaserMode(mode: String) {
-        laserConfig.currentMode = mode
+    func changeLaserMode(mode: LaserMode) {
+        laserConfig.laserMode = mode
         laserConfig.setMode()
     }
     

@@ -16,7 +16,7 @@ struct PatternControlView: View {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(style: .init(lineWidth: 5, lineJoin: .round))
                 .background {
-                    laserConfig.currentPattern.shape
+                    laserConfig.currentLaserPattern.shape
                         .multicolor(isEnabled: laserConfig.currentLaserColorIndex == 0)
                         .foregroundStyle(laserConfig.currentLaserColor)
                         .padding(20)
@@ -25,23 +25,22 @@ struct PatternControlView: View {
                 .padding()
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
-                ForEach(0..<laserConfig.patterns.count, id: \.self) { index in
-                    let pattern = laserConfig.patterns[index]
+                ForEach(LaserPattern.allCases) { laserPattern in
                     Button(action: {
                         hapticFeedback()
                         if laserConfig.activeSyncTypes.contains("pattern") {
-                            laserConfig.togglePatternInclusion(name: pattern.name)
+                            laserConfig.togglePatternInclusion(pattern: laserPattern)
                         } else {
-                            laserConfig.currentPatternIndex = index
+                            laserConfig.currentLaserPattern = laserPattern
                             laserConfig.setPattern()
                         }
                     }) {
-                        laserConfig.patterns[index].shape
+                        laserPattern.shape
                             .foregroundStyle(.white)
                             .padding(20)
                             .frame(height: 100)
                             .frame(maxWidth: .infinity)
-                            .background(getBackgroundColor(index))
+                            .background(getBackgroundColor(pattern: laserPattern))
                             .cornerRadius(10)
                             .shadow(radius: 5)
                     }
@@ -72,15 +71,15 @@ struct PatternControlView: View {
         generator.impactOccurred()
     }
     
-    func getBackgroundColor(_ index: Int) -> Color {
-        if laserConfig.currentPatternIndex == index && laserConfig.activeSyncTypes.contains("pattern") && laserConfig.includedPatterns.contains(laserConfig.patterns[index].name) {
-            return Color.green
-        } else if laserConfig.currentPatternIndex == index && !laserConfig.activeSyncTypes.contains("pattern") {
-            return Color.green
-        } else if laserConfig.activeSyncTypes.contains("pattern") && !laserConfig.includedPatterns.contains(laserConfig.patterns[index].name) {
-            return Color.gray.opacity(0.5)
+    func getBackgroundColor(pattern: LaserPattern) -> Color {
+        if laserConfig.currentLaserPattern == pattern && laserConfig.activeSyncTypes.contains("pattern") && laserConfig.includedPatterns.contains(pattern) {
+            return .green
+        } else if laserConfig.currentLaserPattern == pattern && !laserConfig.activeSyncTypes.contains("pattern") {
+            return .green
+        } else if laserConfig.activeSyncTypes.contains("pattern") && !laserConfig.includedPatterns.contains(pattern) {
+            return .gray.opacity(0.5)
         } else {
-            return Color.gray
+            return .gray
         }
     }
 }

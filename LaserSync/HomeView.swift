@@ -287,7 +287,7 @@ struct HomeView: View {
                     changePattern()
                 } content: {
                     AnyView(
-                        laserConfig.currentPattern.shape
+                        laserConfig.currentLaserPattern.shape
                             .foregroundStyle(.white)
                             .frame(width: 100, height: 50)
                     )
@@ -296,9 +296,9 @@ struct HomeView: View {
                 // Mode
                 SquareButton(title: "Mode", action: {
                     toggleLaserMode()
-                }, backgroundColor: laserConfig.currentMode == "manual" ? Color.green : Color.gray) {
+                }, backgroundColor: laserConfig.laserMode == .manual ? Color.green : Color.gray) {
                     AnyView(
-                        Text(laserConfig.currentMode.capitalized)
+                        Text(laserConfig.laserMode.rawValue.capitalized)
                             .font(.title2)
                             .fontWeight(.semibold)
                             .foregroundStyle(.white)
@@ -450,16 +450,16 @@ struct HomeView: View {
     }
 
     func changePattern() {
-        var newPatternIndex: Int
+        var newPattern: LaserPattern
         repeat {
-            newPatternIndex = Int.random(in: 0..<laserConfig.patterns.count)
-        } while newPatternIndex == laserConfig.currentPatternIndex
-        laserConfig.currentPatternIndex = newPatternIndex
+            newPattern = LaserPattern.allCases.randomElement()!
+        } while newPattern == laserConfig.currentLaserPattern
+        laserConfig.currentLaserPattern = newPattern
         laserConfig.setPattern()
     }
 
     func toggleLaserMode() {
-        laserConfig.currentMode = laserConfig.currentMode == "manual" ? "blackout" : "manual"
+        laserConfig.laserMode = laserConfig.laserMode == .manual ? .blackout : .manual
         laserConfig.setMode()
     }
     

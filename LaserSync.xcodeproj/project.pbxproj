@@ -14,7 +14,7 @@
 		3D2E2F152CF56353002E06CF /* RoomSetupView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F142CF56353002E06CF /* RoomSetupView.swift */; };
 		3D2E2F192CF563B2002E06CF /* Room3DView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F182CF563B2002E06CF /* Room3DView.swift */; };
 		3D2E2F1B2CF56BDA002E06CF /* LightPositioningView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F1A2CF56BDA002E06CF /* LightPositioningView.swift */; };
-		3D2E2F1D2CF6A642002E06CF /* QueueMakerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F1C2CF6A642002E06CF /* QueueMakerView.swift */; };
+		3D2E2F1D2CF6A642002E06CF /* CueMakerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F1C2CF6A642002E06CF /* CueMakerView.swift */; };
 		3D78D3802C37812700123283 /* LaserColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D37F2C37812700123283 /* LaserColorView.swift */; };
 		3D78D3822C37817500123283 /* PatternControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3812C37817500123283 /* PatternControlView.swift */; };
 		3D78D3842C37819F00123283 /* ModeControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3832C37819F00123283 /* ModeControlView.swift */; };
@@ -43,7 +43,7 @@
 		3D2E2F142CF56353002E06CF /* RoomSetupView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoomSetupView.swift; sourceTree = "<group>"; };
 		3D2E2F182CF563B2002E06CF /* Room3DView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Room3DView.swift; sourceTree = "<group>"; };
 		3D2E2F1A2CF56BDA002E06CF /* LightPositioningView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LightPositioningView.swift; sourceTree = "<group>"; };
-		3D2E2F1C2CF6A642002E06CF /* QueueMakerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = QueueMakerView.swift; sourceTree = "<group>"; };
+		3D2E2F1C2CF6A642002E06CF /* CueMakerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueMakerView.swift; sourceTree = "<group>"; };
 		3D78D37F2C37812700123283 /* LaserColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserColorView.swift; sourceTree = "<group>"; };
 		3D78D3812C37817500123283 /* PatternControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternControlView.swift; sourceTree = "<group>"; };
 		3D78D3832C37819F00123283 /* ModeControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeControlView.swift; sourceTree = "<group>"; };
@@ -105,7 +105,7 @@
 				3DDEEFAB2CE96B7E00429363 /* SettingsView.swift */,
 				3D78D3852C3781BF00123283 /* LaserSettings.swift */,
 				3DDEEFAD2CE96EE700429363 /* ServerSettings.swift */,
-				3D2E2F1C2CF6A642002E06CF /* QueueMakerView.swift */,
+				3D2E2F1C2CF6A642002E06CF /* CueMakerView.swift */,
 			);
 			path = Settings;
 			sourceTree = "<group>";
@@ -254,7 +254,7 @@
 				3D2E2F132CF56338002E06CF /* RoomModel.swift in Sources */,
 				3DDEEFAC2CE96B7E00429363 /* SettingsView.swift in Sources */,
 				3D2E2F152CF56353002E06CF /* RoomSetupView.swift in Sources */,
-				3D2E2F1D2CF6A642002E06CF /* QueueMakerView.swift in Sources */,
+				3D2E2F1D2CF6A642002E06CF /* CueMakerView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

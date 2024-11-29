@@ -86,7 +86,7 @@ struct LaserColorView: View {
                         .multicolor()
                         .frame(height: 50)
                         .overlay(content: {
-                            Text(laserConfig.laserColors[0].name.capitalized)
+                            Text(LaserColor.multicolor.rawValue.capitalized)
                                 .font(.title3)
                                 .fontWeight(.semibold)
                                 .foregroundStyle(.white)
@@ -174,9 +174,13 @@ struct LaserColorView: View {
     
     func getColors() -> [(name: String, color: Color)] {
         if laserConfig.getChangeColorTarget() == .movingHead {
-            return laserConfig.mHColors
+            return laserConfig.mHColors.map { movingHeadColor in
+                return (name: movingHeadColor.rawValue.capitalized, color: movingHeadColor.color)
+            }
         }
-        return laserConfig.laserColors
+        return laserConfig.laserColors.map { laserColor in
+            return (name: laserColor.rawValue.capitalized, color: laserColor.color)
+        }
     }
 }
 
