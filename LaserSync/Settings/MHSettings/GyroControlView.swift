@@ -11,7 +11,10 @@ import CoreMotion
 struct GyroControlView: View {
     @EnvironmentObject var laserConfig: LaserConfig
     @EnvironmentObject var motionManager: MotionManager
-
+    
+    @State private var presets: [GyroPreset] = GyroPreset.loadPresets()
+    @State private var showingAlert: Bool = false
+    @State private var newPresetName = ""
     @State private var isDetecting: Bool = false // État de la détection
 
     var body: some View {
@@ -48,6 +51,20 @@ struct GyroControlView: View {
             } label: {
                 Text("Reset position")
             }
+            
+            Button(action: {
+                showingAlert = true
+            }) {
+                Text("Save Preset")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+            .padding(.horizontal)
+            .disabled(!isDetecting)
+            .opacity(!isDetecting ? 0.5 : 1.0)
 
             // Bouton pour démarrer ou arrêter la détection
             Button(action: {
@@ -65,7 +82,7 @@ struct GyroControlView: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
-            .padding()
+            .padding([.horizontal, .bottom])
         }
         .navigationTitle("Gyro control")
         .navigationBarTitleDisplayMode(.inline)
@@ -76,6 +93,27 @@ struct GyroControlView: View {
                 isDetecting = false
             }
         }
+        .alert("New Preset", isPresented: $showingAlert) {
+            TextField("Preset Name", text: $newPresetName)
+            Button("Save", action: savePreset)
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Enter a name for the new preset.")
+        }
+    }
+    
+    private func savePreset() {
+        guard !newPresetName.isEmpty else { return }
+        
+        let newPreset = GyroPreset(
+            id: UUID(),
+            name: newPresetName,
+            pan: motionManager.pan,
+            tilt: motionManager.tilt
+        )
+        presets.append(newPreset)
+        GyroPreset.savePresets(presets) // Sauvegarde dans UserDefaults
+        newPresetName = "" // Réinitialiser le champ
     }
 
     private func visualisationCircle(in size: CGSize) -> some View {

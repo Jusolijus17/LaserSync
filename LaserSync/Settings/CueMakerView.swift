@@ -9,14 +9,6 @@ import SwiftUI
 
 struct CueMakerView: View {
     @State private var currentStep: Step = .selectLights
-    @State private var includeLaser: Bool = false
-    @State private var includeMovingHead: Bool = false
-    @State private var laserColor: String = "Red"
-    @State private var laserMode: String = ""
-    @State private var laserPattern: String = ""
-    @State private var movingHeadColor: String = "Blue"
-    @State private var strobeFrequency: Double = 1.0
-    
     @State private var cue = Cue()
     
     var body: some View {
@@ -32,23 +24,76 @@ struct CueMakerView: View {
             case .laserSettings:
                 LaserCueSetup(
                     cue: $cue,
-                    onNext: { currentStep = includeMovingHead ? .movingHeadSettings : .summary }
+                    onNext: { cue.includeMovingHead ? (currentStep = .movingHeadSettings) : (currentStep = .summary) }
                 )
+                .navigationTitle("Laser settings")
                 .navigationBarTitleDisplayMode(.inline)
             case .movingHeadSettings:
                 MovingHeadCueSetup(
                     cue: $cue,
                     onNext: { currentStep = .summary }
                 )
+                .navigationTitle("Moving Head settings")
                 .navigationBarTitleDisplayMode(.inline)
             case .summary:
-                SummaryView(cue: $cue,
-                    onConfirm: { currentStep = .selectLights }
+                SummaryView(cue: $cue, onConfirm: {
+                    saveCue()
+                    currentStep = .selectLights
+                }, onEditSection: { section in
+                    navigateToStep(for: section)
+                }
                 )
+                .navigationTitle("Summary")
                 .navigationBarTitleDisplayMode(.inline)
             }
         }
         .navigationTitle("Cue Maker")
+    }
+    
+    private func navigateToStep(for section: String) {
+        switch section {
+        case "Laser":
+            if cue.includeLaser {
+                currentStep = .laserSettings
+            }
+        case "Moving Head":
+            if cue.includeMovingHead {
+                currentStep = .movingHeadSettings
+            }
+        default:
+            break
+        }
+    }
+    
+    private func saveCue() {
+        let encoder = JSONEncoder()
+        
+        var savedCues: [Cue] = loadCues()
+        
+        savedCues.append(cue)
+        
+        do {
+            let data = try encoder.encode(savedCues)
+            UserDefaults.standard.set(data, forKey: "savedCues")
+            cue = Cue()
+            print("Cue saved successfully!")
+        } catch {
+            print("Failed to save cue: \(error)")
+        }
+    }
+    
+    private func loadCues() -> [Cue] {
+        let decoder = JSONDecoder()
+        
+        if let data = UserDefaults.standard.data(forKey: "savedCues") {
+            do {
+                let cues = try decoder.decode([Cue].self, from: data)
+                return cues
+            } catch {
+                print("Failed to load cues: \(error)")
+            }
+        }
+        return []
     }
 }
 
@@ -133,7 +178,7 @@ struct LaserCueSetup: View {
     
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            Text("Set Laser Mode")
+            Text("Set Mode")
                 .font(.title2)
                 .padding(.bottom)
             
@@ -157,7 +202,7 @@ struct LaserCueSetup: View {
             .padding(.bottom)
             
             Group {
-                Text("Set Laser Color")
+                Text("Set Color")
                     .font(.title2)
                     .padding(.bottom)
                 
@@ -205,7 +250,7 @@ struct LaserCueSetup: View {
                 }
                 .padding(.bottom)
                 
-                Text("Set Laser Pattern")
+                Text("Set Pattern")
                     .font(.title2)
                     .padding(.bottom)
                 
@@ -289,114 +334,176 @@ struct LaserCueSetup: View {
 // Étape 3 : Paramètres du moving head
 struct MovingHeadCueSetup: View {
     @Binding var cue: Cue
+    @State private var positionPresets: [GyroPreset] = GyroPreset.loadPresets()
     var onNext: () -> Void
     
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            Text("Set Mode")
-                .font(.title2)
-                .padding(.bottom)
-            
-            // Mode
-            HStack {
-                ForEach(MovingHeadMode.allCases.reversed()) { mode in
-                    Button(action: {
-                        cue.movingHeadMode = mode
-                    }) {
-                        Text(mode.rawValue.capitalized)
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .frame(height: 50)
-                            .frame(maxWidth: .infinity)
-                            .background(cue.movingHeadMode == mode ? Color.green : Color.gray)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                            .shadow(radius: 5)
-                    }
-                }
-            }
-            .padding(.bottom)
-            
-            Group {
-                Text("Set Scene")
-                    .font(.title2)
-                    .padding(.bottom)
-                
-                LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
-                    ForEach(MovingHeadScene.allCases.reversed()) { scene in
-                        Button(action: {
-                            cue.movingHeadScene = scene
-                        }) {
-                            Text(scene.rawValue.capitalized)
-                                .foregroundStyle(.white)
-                                .fontWeight(.bold)
-                                .padding(20)
-                                .frame(height: 50)
-                                .frame(maxWidth: .infinity)
-                                .background(getBackgroundColor(scene))
-                                .cornerRadius(10)
-                                .shadow(radius: 5)
-                        }
-                    }
-                }
-                .padding(.bottom)
-                
-                // Color
-                Text("Set Color")
-                    .font(.title2)
-                    .padding(.bottom)
-                
-                ScrollView(.horizontal, showsIndicators: false) {
+        ZStack {
+            ScrollView {
+                VStack(alignment: .leading, spacing: 0) {
+                    Text("Set Mode")
+                        .font(.title2)
+                        .padding(.bottom)
+                    
+                    // Mode
                     HStack {
-                        ForEach(MovingHeadColor.allCases) { movingHeadColor in
-                            if movingHeadColor != .auto {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .fill(movingHeadColor.color)
-                                    .frame(width: 50, height: 50)
-                                    .overlay {
-                                        if cue.movingHeadColor == movingHeadColor {
-                                            Image(systemName: "checkmark")
-                                                .foregroundStyle(movingHeadColor == .white ? .black : .white)
-                                                .fontWeight(.semibold)
-                                                .font(.title)
-                                        }
-                                    }
-                                    .onTapGesture {
-                                        cue.movingHeadColor = movingHeadColor
-                                    }
+                        ForEach(MovingHeadMode.allCases.reversed()) { mode in
+                            Button(action: {
+                                cue.movingHeadMode = mode
+                            }) {
+                                Text(mode.rawValue.capitalized)
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .frame(height: 50)
+                                    .frame(maxWidth: .infinity)
+                                    .background(cue.movingHeadMode == mode ? Color.green : Color.gray)
+                                    .foregroundColor(.white)
+                                    .cornerRadius(10)
+                                    .shadow(radius: 5)
                             }
                         }
                     }
                     .padding(.bottom)
+                    
+                    Group {
+                        // Scene
+                        Group {
+                            Text("Set Scene")
+                                .font(.title2)
+                                .padding(.bottom)
+                            
+                            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
+                                ForEach(MovingHeadScene.allCases.reversed()) { scene in
+                                    Button(action: {
+                                        cue.positionPreset = nil
+                                        cue.movingHeadScene = scene
+                                    }) {
+                                        Text(scene.rawValue.capitalized)
+                                            .foregroundStyle(.white)
+                                            .fontWeight(.bold)
+                                            .padding(20)
+                                            .frame(height: 50)
+                                            .frame(maxWidth: .infinity)
+                                            .background(getBackgroundColor(scene))
+                                            .cornerRadius(10)
+                                            .shadow(radius: 5)
+                                    }
+                                }
+                            }
+                            .padding(.bottom)
+                        }
+                        .disabled(cue.positionPreset != nil)
+                        .opacity(cue.positionPreset != nil ? 0.5 : 1.0)
+                        
+                        Group {
+                            // Position
+                            Text("Set Position")
+                                .font(.title2)
+                                .padding(.bottom)
+                            
+                            Menu {
+                                Button {
+                                    cue.positionPreset = nil
+                                } label: {
+                                    Text("Off")
+                                }
+                                
+                                // Options pour chaque preset
+                                ForEach(positionPresets) { preset in
+                                    Button {
+                                        cue.movingHeadScene = .off
+                                        cue.positionPreset = preset
+                                    } label: {
+                                        Text(preset.name)
+                                    }
+                                }
+                            } label: {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .foregroundStyle(Color(UIColor.secondarySystemBackground))
+                                    .frame(height: 50)
+                                    .overlay {
+                                        HStack {
+                                            Text(cue.positionPreset?.name ?? "Off")
+                                                .font(.headline)
+                                                .foregroundStyle(.white)
+                                            Spacer()
+                                            Image(systemName: "chevron.down")
+                                        }
+                                        .padding()
+                                    }
+                            }
+                            .padding(.bottom)
+                        }
+                        .disabled(cue.movingHeadScene != .off)
+                        .opacity(cue.movingHeadScene != .off ? 0.5 : 1.0)
+                        
+                        // Color
+                        Text("Set Color")
+                            .font(.title2)
+                            .padding(.bottom)
+                        
+                        ScrollView(.horizontal, showsIndicators: false) {
+                            HStack {
+                                ForEach(MovingHeadColor.allCases) { movingHeadColor in
+                                    if movingHeadColor != .auto {
+                                        RoundedRectangle(cornerRadius: 10)
+                                            .fill(movingHeadColor.color)
+                                            .frame(width: 50, height: 50)
+                                            .overlay {
+                                                if cue.movingHeadColor == movingHeadColor {
+                                                    Image(systemName: "checkmark")
+                                                        .foregroundStyle(movingHeadColor == .white ? .black : .white)
+                                                        .fontWeight(.semibold)
+                                                        .font(.title)
+                                                }
+                                            }
+                                            .onTapGesture {
+                                                cue.movingHeadColor = movingHeadColor
+                                            }
+                                    }
+                                }
+                            }
+                            .padding(.bottom)
+                        }
+                        .disabled(cue.movingHeadColorFrequency != 0)
+                        .opacity(cue.movingHeadColorFrequency != 0 ? 0.5 : 1.0)
+                        
+                        CustomSliderView(sliderValue: $cue.movingHeadColorFrequency, title: "Speed")
+                            .padding(.bottom)
+                        
+                        // Strobe
+                        Text("Set Strobe")
+                            .font(.title2)
+                            .padding(.bottom)
+                        
+                        CustomSliderView(sliderValue: $cue.movingHeadStrobeFrequency, title: "Intensity")
+                            .padding(.bottom)
+                        
+                        // Light Intensity
+                        Text("Set Brightness")
+                            .font(.title2)
+                            .padding(.bottom)
+                        
+                        CustomSliderView(sliderValue: $cue.movingHeadBrightness, title: "Brightness")
+                            .padding(.bottom)
+                    }
+                    .disabled(cue.movingHeadMode != .manual)
+                    .opacity(cue.movingHeadMode != .manual ? 0.5 : 1.0)
                 }
-                .disabled(cue.movingHeadColorFrequency != 0)
-                .opacity(cue.movingHeadColorFrequency != 0 ? 0.5 : 1.0)
-                
-                CustomSliderView(sliderValue: $cue.movingHeadColorFrequency, title: "Speed")
-                    .padding(.bottom)
-                
-                Text("Set Strobe")
-                    .font(.title2)
-                    .padding(.bottom)
-                
-                CustomSliderView(sliderValue: $cue.movingHeadStrobeFrequency, title: "Intensity")
-            }
-            .disabled(cue.movingHeadMode != .manual)
-            .opacity(cue.movingHeadMode != .manual ? 0.5 : 1.0)
-            
-            Spacer()
-            
-            Button(action: onNext) {
-                Text("Next")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                .padding()
             }
         }
-        .padding()
+        
+        Button(action: onNext) {
+            Text("Next")
+                .font(.headline)
+                .frame(maxWidth: .infinity)
+                .padding()
+                .background(Color.accentColor)
+                .foregroundColor(.white)
+                .cornerRadius(10)
+        }
+        .padding([.bottom, .horizontal])
     }
     
     func getBackgroundColor(_ scene: MovingHeadScene) -> Color {
@@ -441,6 +548,7 @@ struct SummaryView: View {
     @Binding var cue: Cue
     
     var onConfirm: () -> Void
+    var onEditSection: (String) -> Void
     
     var body: some View {
         VStack {
@@ -453,6 +561,9 @@ struct SummaryView: View {
                             lightName: "Laser",
                             details: getLaserDetails()
                         )
+                        .onTapGesture {
+                            onEditSection("Laser")
+                        }
                     }
                     
                     // Section Moving Head
@@ -460,11 +571,11 @@ struct SummaryView: View {
                         SummaryLightSection(
                             iconName: "moving_head_icon", // Nom de l'icône pour le moving head
                             lightName: "Moving Head",
-                            details: [
-                                ("Color", cue.movingHeadColor.rawValue.capitalized),
-                                //("Strobe Frequency", "\(strobeFrequency, specifier: "%.1f") Hz")
-                            ]
+                            details: getMovingHeadDetails()
                         )
+                        .onTapGesture {
+                            onEditSection("Moving Head")
+                        }
                     }
                 }
                 .padding()
@@ -493,19 +604,75 @@ struct SummaryView: View {
         var details: [(String, String)] = []
         
         // Mode
-        if cue.laserMode != .manual {
-            return [("Mode", cue.laserMode.rawValue.capitalized)]
-        } else {
-            details.append(("Mode", cue.laserMode.rawValue.capitalized))
+        details.append(("Mode", cue.laserMode.rawValue.capitalized))
+        
+        // Blackout
+        if cue.laserMode == .blackout {
+            return details
         }
         
-        // Couleur
+        // Auto & Sound
+        if cue.laserMode != .manual {
+            details.append(("Color", "Auto"))
+            details.append(("Pattern", "Auto"))
+            return details
+        }
+        
+        // Color
         let color = cue.laserBPMSyncModes.contains(.color) ? "Sync" : cue.laserColor.rawValue.capitalized
         details.append(("Color", color))
         
-        // Motif
+        // Pattern
         let pattern = cue.laserBPMSyncModes.contains(.pattern) ? "Sync" : cue.laserPattern.rawValue.capitalized
         details.append(("Pattern", pattern))
+        
+        return details
+    }
+    
+    func getMovingHeadDetails() -> [(String, String)] {
+        var details: [(String, String)] = []
+        
+        // Mode
+        details.append(("Mode", cue.movingHeadMode.rawValue.capitalized))
+        
+        // Blackout
+        if cue.movingHeadMode == .blackout {
+            return details
+        }
+        
+        if cue.movingHeadMode != .manual {
+            details.append(("Scene", "Off"))
+            details.append(("Position", "Off"))
+            details.append(("Color", "Auto"))
+            details.append(("Color Speed", "Auto"))
+            details.append(("Strobe", "Auto"))
+            details.append(("Brightness", "Auto"))
+            return details
+        }
+        
+        // Scene
+        let scene = cue.movingHeadScene.rawValue.capitalized
+        details.append(("Scene", scene))
+        
+        // Position
+        let position = "\(cue.positionPreset?.name ?? "Off")"
+        details.append(("Position", position))
+        
+        // Color
+        let color = cue.movingHeadColorFrequency != 0 ? "Auto" : cue.movingHeadColor.rawValue.capitalized
+        details.append(("Color", color))
+        
+        // Color Speed
+        let colorFrequency = cue.movingHeadColorFrequency == 0 ? "Off" : "\(Int(cue.movingHeadColorFrequency))%"
+        details.append(("Color Speed", colorFrequency))
+        
+        // Strobe
+        let strobe = cue.movingHeadStrobeFrequency == 0 ? "Off" : "\(Int(cue.movingHeadStrobeFrequency))%"
+        details.append(("Strobe", strobe))
+        
+        // Brightness
+        let brightness = cue.movingHeadBrightness == 0 ? "Off" : "\(Int(cue.movingHeadBrightness))%"
+        details.append(("Brightness", brightness))
         
         return details
     }
@@ -560,9 +727,9 @@ enum Step {
 }
 
 // Modèle de données pour une cue
-struct Cue: Identifiable {
-    let id = UUID()
-    
+struct Cue: Identifiable, Codable {
+    var id = UUID()
+
     // Laser
     var includeLaser: Bool = false
     var laserColor: LaserColor = .red
@@ -570,7 +737,7 @@ struct Cue: Identifiable {
     var laserMode: LaserMode = .blackout
     var laserPattern: LaserPattern = .straight
     var laserIncludedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
-    
+
     // Moving Head
     var includeMovingHead: Bool = false
     var movingHeadMode: MovingHeadMode = .blackout
@@ -578,6 +745,8 @@ struct Cue: Identifiable {
     var movingHeadColorFrequency: Double = 0
     var movingHeadStrobeFrequency: Double = 0
     var movingHeadScene: MovingHeadScene = .off
+    var movingHeadBrightness: Double = 50
+    var positionPreset: GyroPreset? = nil
 }
 
 struct CustomCueMakerPreview: View {
@@ -591,7 +760,7 @@ struct CustomCueMakerPreview: View {
 
 #Preview {
     NavigationView {
-        CustomCueMakerPreview()
+        CueMakerView()
     }
     .navigationTitle("Cue Maker")
 }
