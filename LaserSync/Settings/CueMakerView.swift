@@ -317,7 +317,7 @@ struct LaserCueSetup: View {
         }
     }
     
-    private func makeBPMSyncBinding(for mode: BPMSyncModes) -> Binding<Bool> {
+    private func makeBPMSyncBinding(for mode: BPMSyncMode) -> Binding<Bool> {
         Binding<Bool>(
             get: { cue.laserBPMSyncModes.contains(mode) },
             set: { newValue in
@@ -530,7 +530,7 @@ struct MovingHeadCueSetup: View {
         }
     }
     
-    private func makeBPMSyncBinding(for mode: BPMSyncModes) -> Binding<Bool> {
+    private func makeBPMSyncBinding(for mode: BPMSyncMode) -> Binding<Bool> {
         Binding<Bool>(
             get: { cue.laserBPMSyncModes.contains(mode) },
             set: { newValue in
@@ -546,6 +546,7 @@ struct MovingHeadCueSetup: View {
 
 struct SummaryView: View {
     @Binding var cue: Cue
+    @State private var showingAlert = false
     
     var onConfirm: () -> Void
     var onEditSection: (String) -> Void
@@ -586,8 +587,16 @@ struct SummaryView: View {
             
             Spacer()
             
+            VStack(alignment: .leading) {
+                Text("Cue color")
+                    .font(.title2)
+                    .padding(.horizontal)
+                let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .gray]
+                ColorSelectorView(selectedColor: $cue.color, colors: colors)
+            }
+            
             // Bouton de confirmation
-            Button(action: onConfirm) {
+            Button(action: {showingAlert.toggle()}) {
                 Text("Confirm")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
@@ -598,9 +607,20 @@ struct SummaryView: View {
             }
             .padding()
         }
+        .alert("New Cue", isPresented: $showingAlert) {
+            TextField("Cue Name", text: $cue.name)
+            Button("Save", action: {
+                if cue.name != "" {
+                    onConfirm()
+                }
+            })
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("Enter a name for the new cue.")
+        }
     }
     
-    func getLaserDetails() -> [(String, String)] {
+    private func getLaserDetails() -> [(String, String)] {
         var details: [(String, String)] = []
         
         // Mode
@@ -629,7 +649,7 @@ struct SummaryView: View {
         return details
     }
     
-    func getMovingHeadDetails() -> [(String, String)] {
+    private func getMovingHeadDetails() -> [(String, String)] {
         var details: [(String, String)] = []
         
         // Mode
@@ -719,6 +739,42 @@ struct SummaryLightSection: View {
     }
 }
 
+struct ColorSelectorView: View {
+    @Binding var selectedColor: Color // Couleur sélectionnée
+    let colors: [Color] // Liste des couleurs disponibles
+
+    var body: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 10) {
+                ForEach(colors, id: \.self) { color in
+                    ZStack {
+                        RoundedRectangle(cornerRadius: 10)
+                            .fill(color)
+                            .frame(width: 50, height: 50)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 10)
+                                    .stroke(selectedColor == color ? Color.black : Color.clear, lineWidth: 3)
+                            )
+                            .shadow(radius: 3)
+
+                        // Ajout d'un checkmark si la couleur est sélectionnée
+                        if selectedColor == color {
+                            Image(systemName: "checkmark")
+                                .font(.headline)
+                                .foregroundColor(.white)
+                                .bold()
+                        }
+                    }
+                    .onTapGesture {
+                        selectedColor = color // Met à jour la couleur sélectionnée
+                    }
+                }
+            }
+            .padding(.horizontal)
+        }
+    }
+}
+
 enum Step {
     case selectLights
     case laserSettings
@@ -729,11 +785,13 @@ enum Step {
 // Modèle de données pour une cue
 struct Cue: Identifiable, Codable {
     var id = UUID()
+    var color: Color = .red
+    var name: String = ""
 
     // Laser
     var includeLaser: Bool = false
     var laserColor: LaserColor = .red
-    var laserBPMSyncModes: [BPMSyncModes] = []
+    var laserBPMSyncModes: [BPMSyncMode] = []
     var laserMode: LaserMode = .blackout
     var laserPattern: LaserPattern = .straight
     var laserIncludedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)

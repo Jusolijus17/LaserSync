@@ -12,7 +12,7 @@ struct SettingsView: View {
     @StateObject private var roomModel = RoomModel()
     
     var body: some View {
-        NavigationView {
+        NavigationStack {
             VStack {
                 // Section principale avec deux grandes rangées (Laser et Moving Head)
                 VStack(spacing: 20) {
@@ -88,41 +88,6 @@ struct SettingsView: View {
         .padding()
         .background(Color(UIColor.secondarySystemBackground))
         .cornerRadius(10)
-    }
-}
-
-struct LaunchpadButton: View {
-    var color: Color // La couleur du bouton
-
-    var body: some View {
-        GeometryReader { geometry in
-            ZStack {
-                // Ombre périphérique (halo lumineux)
-                RoundedRectangle(cornerRadius: geometry.size.width / 6) // Calcul dynamique du rayon
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [color.opacity(0.4), color.opacity(0)]),
-                            center: .center,
-                            startRadius: 10,
-                            endRadius: 80
-                        )
-                    )
-                    .blur(radius: geometry.size.width / 10)
-                
-                // Bouton principal
-                RoundedRectangle(cornerRadius: geometry.size.width / 6) // Même arrondi
-                    .fill(
-                        RadialGradient(
-                            gradient: Gradient(colors: [color, color.opacity(0.5)]),
-                            center: .center,
-                            startRadius: 0,
-                            endRadius: 50
-                        )
-                    )
-                    .shadow(color: color.opacity(0.5), radius: geometry.size.width / 10, x: 0, y: 4)
-            }
-        }
-        .aspectRatio(1, contentMode: .fit) // Assure que le bouton reste carré
     }
 }
 

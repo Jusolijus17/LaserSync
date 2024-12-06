@@ -56,6 +56,7 @@ struct HomeView: View {
             TabView {
                 laserControlGrid
                 movingHeadControlGrid
+                LaunchpadView()
             }
             .tabViewStyle(.page)
             .indexViewStyle(.page)
@@ -184,7 +185,7 @@ struct HomeView: View {
                     hapticFeedback()
                     laserConfig.toggleMHMode(.blackout)
                     laserConfig.toggleMHScene(.off)
-                    laserConfig.mHDimmer = 0
+                    laserConfig.mHBrightness = 0
                 }
                 
                 // Scene
@@ -213,8 +214,8 @@ struct HomeView: View {
                 }
             }
             
-            CustomSliderView(sliderValue: $laserConfig.mHDimmer, title: "Brightness")
-                .onChange(of: laserConfig.mHDimmer) { _, newValue in
+            CustomSliderView(sliderValue: $laserConfig.mHBrightness, title: "Brightness")
+                .onChange(of: laserConfig.mHBrightness) { _, newValue in
                     if newValue > 0 {
                         laserConfig.mHMode = .manual
                     } else {

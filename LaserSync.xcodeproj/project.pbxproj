@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3D116A732D028FFA002E0A37 /* LaunchpadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D116A722D028FFA002E0A37 /* LaunchpadView.swift */; };
 		3D2E2F0F2CF56310002E06CF /* GyroControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F0B2CF56310002E06CF /* GyroControlView.swift */; };
 		3D2E2F102CF56310002E06CF /* MotionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F0C2CF56310002E06CF /* MotionManager.swift */; };
 		3D2E2F112CF56310002E06CF /* MovingHeadSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D2E2F0D2CF56310002E06CF /* MovingHeadSettings.swift */; };
@@ -36,6 +37,7 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
+		3D116A722D028FFA002E0A37 /* LaunchpadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchpadView.swift; sourceTree = "<group>"; };
 		3D2E2F0B2CF56310002E06CF /* GyroControlView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GyroControlView.swift; sourceTree = "<group>"; };
 		3D2E2F0C2CF56310002E06CF /* MotionManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MotionManager.swift; sourceTree = "<group>"; };
 		3D2E2F0D2CF56310002E06CF /* MovingHeadSettings.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = MovingHeadSettings.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 				3D78D3812C37817500123283 /* PatternControlView.swift */,
 				3D78D3832C37819F00123283 /* ModeControlView.swift */,
 				3D78D3892C37AF6900123283 /* HomeView.swift */,
+				3D116A722D028FFA002E0A37 /* LaunchpadView.swift */,
 				3DFD8A922C377AB300A8B186 /* Assets.xcassets */,
 				3DFD8A942C377AB300A8B186 /* Preview Content */,
 				3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */,
@@ -248,6 +251,7 @@
 				3D78D38A2C37AF6900123283 /* HomeView.swift in Sources */,
 				3DA7ADAD2C3A3C6100D52F38 /* LaserConfig.swift in Sources */,
 				3DDEEFB22CE99E0100429363 /* SocketIOManager.swift in Sources */,
+				3D116A732D028FFA002E0A37 /* LaunchpadView.swift in Sources */,
 				3D2E2F0F2CF56310002E06CF /* GyroControlView.swift in Sources */,
 				3D78D3862C3781BF00123283 /* LaserSettings.swift in Sources */,
 				3D2E2F112CF56310002E06CF /* MovingHeadSettings.swift in Sources */,

@@ -15,8 +15,7 @@ struct MovingHeadSettings: View {
     var body: some View {
         Form {
             Section(header: Text("Control").font(.headline)) {
-                NavigationLink(destination: GyroControlView()
-                    .environmentObject(motionManager)) {
+                NavigationLink(destination: GyroControlView().environmentObject(motionManager)) {
                     Text("Gyro control")
                 }
                 NavigationLink(destination: RoomSetupView().environmentObject(roomModel)) {

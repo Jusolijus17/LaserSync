@@ -28,7 +28,7 @@ struct PatternControlView: View {
                 ForEach(LaserPattern.allCases) { laserPattern in
                     Button(action: {
                         hapticFeedback()
-                        if laserConfig.activeSyncTypes.contains("pattern") {
+                        if laserConfig.laserBPMSyncModes.contains(.pattern) {
                             laserConfig.togglePatternInclusion(pattern: laserPattern)
                         } else {
                             laserConfig.currentLaserPattern = laserPattern
@@ -50,12 +50,12 @@ struct PatternControlView: View {
             
             Button(action: {
                 hapticFeedback()
-                laserConfig.toggleBpmSync(type: "pattern")
+                laserConfig.toggleBpmSync(mode: .pattern)
             }) {
                 Text("BPM Sync")
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(laserConfig.activeSyncTypes.contains("pattern") ? Color.yellow : Color.gray)
+                    .background(laserConfig.laserBPMSyncModes.contains(.pattern) ? Color.yellow : Color.gray)
                     .foregroundColor(.black)
                     .cornerRadius(10)
                     .shadow(radius: 5)
@@ -72,11 +72,11 @@ struct PatternControlView: View {
     }
     
     func getBackgroundColor(pattern: LaserPattern) -> Color {
-        if laserConfig.currentLaserPattern == pattern && laserConfig.activeSyncTypes.contains("pattern") && laserConfig.includedPatterns.contains(pattern) {
+        if laserConfig.currentLaserPattern == pattern && laserConfig.laserBPMSyncModes.contains(.pattern) && laserConfig.laserIncludedPatterns.contains(pattern) {
             return .green
-        } else if laserConfig.currentLaserPattern == pattern && !laserConfig.activeSyncTypes.contains("pattern") {
+        } else if laserConfig.currentLaserPattern == pattern && !laserConfig.laserBPMSyncModes.contains(.pattern) {
             return .green
-        } else if laserConfig.activeSyncTypes.contains("pattern") && !laserConfig.includedPatterns.contains(pattern) {
+        } else if laserConfig.laserBPMSyncModes.contains(.pattern) && !laserConfig.laserIncludedPatterns.contains(pattern) {
             return .gray.opacity(0.5)
         } else {
             return .gray

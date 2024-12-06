@@ -16,6 +16,8 @@ struct GyroControlView: View {
     @State private var showingAlert: Bool = false
     @State private var newPresetName = ""
     @State private var isDetecting: Bool = false // État de la détection
+    @State private var lastMotionPan: Double = 0
+    @State private var lastMotionTilt: Double = 0
 
     var body: some View {
         VStack {
@@ -52,7 +54,12 @@ struct GyroControlView: View {
                 Text("Reset position")
             }
             
+            // Save preset
             Button(action: {
+                if isDetecting {
+                    lastMotionPan = motionManager.pan
+                    lastMotionTilt = motionManager.tilt
+                }
                 showingAlert = true
             }) {
                 Text("Save Preset")
@@ -63,12 +70,13 @@ struct GyroControlView: View {
                     .cornerRadius(10)
             }
             .padding(.horizontal)
-            .disabled(!isDetecting)
-            .opacity(!isDetecting ? 0.5 : 1.0)
 
             // Bouton pour démarrer ou arrêter la détection
             Button(action: {
                 if isDetecting {
+                    lastMotionPan = motionManager.pan
+                    lastMotionTilt = motionManager.tilt
+                    print("Motion:", lastMotionPan, lastMotionTilt)
                     stopMotionUpdates()
                 } else {
                     startMotionUpdates()
@@ -108,8 +116,8 @@ struct GyroControlView: View {
         let newPreset = GyroPreset(
             id: UUID(),
             name: newPresetName,
-            pan: motionManager.pan,
-            tilt: motionManager.tilt
+            pan: lastMotionPan,
+            tilt: lastMotionTilt
         )
         presets.append(newPreset)
         GyroPreset.savePresets(presets) // Sauvegarde dans UserDefaults

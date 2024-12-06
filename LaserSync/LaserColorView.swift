@@ -96,12 +96,12 @@ struct LaserColorView: View {
                 
                 Button(action: {
                     hapticFeedback()
-                    laserConfig.toggleBpmSync(type: "color")
+                    laserConfig.toggleBpmSync(mode: .color)
                 }) {
                     Text("BPM Sync")
                         .font(.headline)
                         .frame(maxWidth: .infinity, minHeight: 50)
-                        .background(laserConfig.activeSyncTypes.contains("color") ? Color.yellow : Color.gray)
+                        .background(laserConfig.laserBPMSyncModes.contains(.color) ? Color.yellow : Color.gray)
                         .foregroundColor(.black)
                         .cornerRadius(10)
                         .shadow(radius: 5)

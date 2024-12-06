@@ -15,8 +15,8 @@ class LaserConfig: ObservableObject {
     @Published var currentBpm: Int = 0
     @Published var bpmMultiplier: Double = 1.0
     @Published var strobeModeEnabled: Bool = false
-    @Published var activeSyncTypes = Set<String>()
-    @Published var includedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
+    @Published var laserBPMSyncModes: [BPMSyncMode] = []
+    @Published var laserIncludedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
     @Published var verticalAdjust: Double = 63
     @Published var horizontalAnimationEnabled: Bool = false
     @Published var horizontalAnimationSpeed: Double = 127
@@ -25,9 +25,10 @@ class LaserConfig: ObservableObject {
     @Published var lightControlColor = Set<Light>()
     @Published var mHMode: MovingHeadMode = .blackout
     @Published var mhScene: MovingHeadScene = .off
-    @Published var mHDimmer: Double = 0
+    @Published var mHBrightness: Double = 0
     @Published var mHStrobe: Double = 0
     @Published var mHColorSpeed: Double = 0
+    @Published var positionPreset: GyroPreset? = nil
     
     // Connection settings
     @Published var serverIp: String
@@ -198,6 +199,44 @@ class LaserConfig: ObservableObject {
         }.resume()
     }
     
+    // MARK: - CUE settings
+    func setCue(_ cue: Cue) {
+        if cue.includeLaser {
+            self.currentLaserPattern = cue.laserPattern
+            self.laserMode = cue.laserMode
+            //self.currentLaserColor = cue.laserColor
+            self.laserBPMSyncModes = cue.laserBPMSyncModes
+            self.laserIncludedPatterns = cue.laserIncludedPatterns
+        }
+        if cue.includeMovingHead {
+            self.mHMode = cue.movingHeadMode
+            //self.currentMHColor = cue.movingHeadColor
+            self.mHColorSpeed = cue.movingHeadColorFrequency
+            self.mHStrobe = cue.movingHeadStrobeFrequency
+            self.mhScene = cue.movingHeadScene
+            self.mHBrightness = cue.movingHeadBrightness
+            self.positionPreset = cue.positionPreset
+        }
+        
+        guard let url = URL(string: "\(self.baseUrl)/set_cue") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let jsonData = try encoder.encode(cue)
+            request.httpBody = jsonData
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("JSON to send: \(jsonString)")
+            }
+        } catch {
+            print("Failed to encode Cue: \(error)")
+            return
+        }
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
     // MARK: - Lights settings
     
     // Used to set which lights will change color using the color board
@@ -295,16 +334,16 @@ class LaserConfig: ObservableObject {
     }
     
     func togglePatternInclusion(pattern: LaserPattern) {
-        if includedPatterns.contains(pattern) {
-            includedPatterns.remove(pattern)
+        if laserIncludedPatterns.contains(pattern) {
+            laserIncludedPatterns.remove(pattern)
         } else {
-            includedPatterns.insert(pattern)
+            laserIncludedPatterns.insert(pattern)
         }
         setPatternInclude()
     }
 
     func setPatternInclude() {
-        let patternList = laserPatterns.map { ["name": $0.rawValue, "include": includedPatterns.contains($0)] }
+        let patternList = laserPatterns.map { ["name": $0.rawValue, "include": laserIncludedPatterns.contains($0)] }
         guard let url = URL(string: "\(self.baseUrl)/set_pattern_include") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -440,7 +479,7 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Int] = ["value": Int(self.mHDimmer)]
+        let body: [String: Int] = ["value": Int(self.mHBrightness)]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -493,14 +532,14 @@ class LaserConfig: ObservableObject {
     
     // MARK: - BPM sync
     
-    func toggleBpmSync(type: String) {
-        if activeSyncTypes.contains(type) {
-            activeSyncTypes.remove(type)
-            if activeSyncTypes.isEmpty {
+    func toggleBpmSync(mode: BPMSyncMode) {
+        if laserBPMSyncModes.contains(mode) {
+            laserBPMSyncModes.removeAll { $0 == mode }
+            if laserBPMSyncModes.isEmpty {
                 stopBpmSyncTimer()
             }
         } else {
-            activeSyncTypes.insert(type)
+            laserBPMSyncModes.append(mode)
             startBpmSyncTimer()
         }
         setSyncMode()
@@ -509,10 +548,10 @@ class LaserConfig: ObservableObject {
     private func startBpmSyncTimer() {
         stopBpmSyncTimer()
         bpmSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) * bpmMultiplier, repeats: true) { _ in
-            if self.activeSyncTypes.contains("pattern") {
+            if self.laserBPMSyncModes.contains(.pattern) {
                 self.currentLaserPattern = LaserPattern.allCases.randomElement()!
             }
-            if self.activeSyncTypes.contains("color") {
+            if self.laserBPMSyncModes.contains(.color) {
                 self.currentLaserColorIndex = (self.currentLaserColorIndex + 1) % self.laserColors.count
             }
         }
@@ -520,7 +559,7 @@ class LaserConfig: ObservableObject {
     
     func restartBpmSyncTimer() {
         stopBpmSyncTimer()
-        if !activeSyncTypes.isEmpty {
+        if !laserBPMSyncModes.isEmpty {
             startBpmSyncTimer()
         }
     }
@@ -542,7 +581,7 @@ class LaserConfig: ObservableObject {
     }
     
     func setSyncMode() {
-        let syncModes = Array(activeSyncTypes).joined(separator: ",")
+        let syncModes = laserBPMSyncModes.map { $0.rawValue }.joined(separator: ",")
         guard let url = URL(string: "\(self.baseUrl)/set_sync_mode") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
