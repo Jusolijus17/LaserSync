@@ -10,6 +10,7 @@ import SwiftUI
 struct SettingsView: View {
     @StateObject private var motionManager = MotionManager()
     @StateObject private var roomModel = RoomModel()
+    @EnvironmentObject private var sharedStates: SharedStates
     
     var body: some View {
         NavigationStack {
@@ -36,12 +37,15 @@ struct SettingsView: View {
                         }
                     }
                     
-                    NavigationLink(destination: CueMakerView()) {
+                    Button {
+                        sharedStates.showCueMaker = true
+                    } label: {
                         settingsRow(title: "Cue Maker") {
                             LaunchpadButton(color: .red)
                                 .frame(width: 40, height: 40)
                         }
                     }
+                    .navigationDestination(isPresented: $sharedStates.showCueMaker, destination: {CueMakerView()})
                 }
                 .padding(.top, 20)
                 .padding(.horizontal, 16)
@@ -94,4 +98,5 @@ struct SettingsView: View {
 #Preview {
     SettingsView()
         .environmentObject(LaserConfig())
+        .environmentObject(SharedStates())
 }

@@ -58,8 +58,7 @@ struct HomeView: View {
                 movingHeadControlGrid
                 LaunchpadView()
             }
-            .tabViewStyle(.page)
-            .indexViewStyle(.page)
+            .tabViewStyle(.page(indexDisplayMode: .always))
         }
         .background(Color.black.edgesIgnoringSafeArea(.all))
         .onChange(of: laserConfig.currentBpm) {
@@ -602,5 +601,6 @@ struct HomeView_Previews: PreviewProvider {
     static var previews: some View {
         HomeView()
             .environmentObject(LaserConfig())
+            .environmentObject(SharedStates())
     }
 }

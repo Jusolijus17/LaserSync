@@ -9,53 +9,44 @@ import SwiftUI
 
 struct LaunchpadView: View {
     @EnvironmentObject var laserConfig: LaserConfig
+    @EnvironmentObject var sharedStates: SharedStates
     @State private var cues: [Cue?] = [] // Liste des Cue, incluant des cases vides
     private let totalSlots = 12 // Nombre total de boutons dans la grille
-
+    
     var body: some View {
         VStack {
             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 25) {
                 ForEach(0..<totalSlots, id: \.self) { index in
                     if index < cues.count, let cue = cues[index] {
                         // Bouton représentant un Cue existant
-                        LaunchpadButton(color: cue.color)
-                            .onTapGesture {
-                                print("Cue tapped: \(cue.id)")
-                                laserConfig.setCue(cue)
-                            }
+                        Button {
+                            print("Cue tapped: \(cue.id)")
+                            laserConfig.setCue(cue)
+                        } label: {
+                            LaunchpadButton(color: cue.color)
+                        }
                     } else {
-                        RoundedRectangle(cornerRadius: 10)
-                            .stroke(style: StrokeStyle(lineWidth: 2, dash: [10]))
-                            .foregroundColor(.gray)
-                            .frame(width: 100, height: 100)
-                            .overlay {
-                                Image(systemName: "plus")
-                                    .font(.largeTitle)
-                                    .foregroundColor(.gray)
-                            }
+                        Button {
+                            sharedStates.redirectToCueMaker()
+                        } label: {
+                            RoundedRectangle(cornerRadius: 10)
+                                .stroke(style: StrokeStyle(lineWidth: 2, dash: [10]))
+                                .foregroundColor(.gray)
+                                .frame(width: 100, height: 100)
+                                .overlay {
+                                    Image(systemName: "plus")
+                                        .font(.largeTitle)
+                                        .foregroundColor(.gray)
+                                }
+                        }
                     }
                 }
             }
             .padding()
         }
         .onAppear {
-            cues = loadCues()
+            cues = Cue().loadCues()
         }
-    }
-    
-    // Fonction pour charger les Cue sauvegardés
-    private func loadCues() -> [Cue] {
-        let decoder = JSONDecoder()
-        
-        if let data = UserDefaults.standard.data(forKey: "savedCues") {
-            do {
-                let cues = try decoder.decode([Cue].self, from: data)
-                return cues
-            } catch {
-                print("Failed to load cues: \(error)")
-            }
-        }
-        return []
     }
 }
 
@@ -96,4 +87,5 @@ struct LaunchpadButton: View {
 
 #Preview {
     LaunchpadView()
+        .environmentObject(SharedStates())
 }

@@ -30,6 +30,20 @@ enum Light: String, Codable, CaseIterable, Identifiable {
     }
 }
 
+enum CueMakerStep {
+    case selectLights
+    case laserSettings
+    case movingHeadSettings
+    case summary
+}
+
+enum CueType: String, Codable, CaseIterable, Identifiable {
+    case definitive
+    case temporary
+    
+    var id: String { return self.rawValue }
+}
+
 enum MovingHeadMode: String, Codable, CaseIterable, Identifiable {
     case auto
     case manual
