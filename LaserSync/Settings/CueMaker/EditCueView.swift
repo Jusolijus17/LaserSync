@@ -22,13 +22,7 @@ struct CueListView: View {
                 Text("No cues")
             } else {
                 ForEach(cues) { cue in
-                    if cue.includeLaser || cue.includeMovingHead {
-                        // NavigationLink si les lumières sont incluses
-                        NavigationLink(destination: CueMakerView(currentStep: getCueMakerStep(cue))) {
-                            CueRowView(cue: cue)
-                        }
-                    } else {
-                        // Simple HStack sans NavigationLink
+                    NavigationLink(destination: CueMakerView(currentStep: getCueMakerStep(cue))) {
                         CueRowView(cue: cue)
                     }
                 }

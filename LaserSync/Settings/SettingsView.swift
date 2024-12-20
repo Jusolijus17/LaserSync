@@ -9,7 +9,6 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var motionManager = MotionManager()
-    @StateObject private var roomModel = RoomModel()
     @EnvironmentObject private var sharedStates: SharedStates
     
     var body: some View {
@@ -28,7 +27,6 @@ struct SettingsView: View {
                     NavigationLink(destination:
                                     MovingHeadSettings()
                         .environmentObject(motionManager)
-                        .environmentObject(roomModel)
                     ) {
                         settingsRow(title: "Moving Head") {
                             Image("moving_head_icon")

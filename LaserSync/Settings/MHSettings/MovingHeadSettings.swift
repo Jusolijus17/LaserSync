@@ -10,7 +10,6 @@ import SwiftUI
 struct MovingHeadSettings: View {
     @EnvironmentObject var laserConfig: LaserConfig
     @EnvironmentObject var motionManager: MotionManager
-    @EnvironmentObject var roomModel: RoomModel
     
     var body: some View {
         Form {
@@ -18,8 +17,13 @@ struct MovingHeadSettings: View {
                 NavigationLink(destination: GyroControlView().environmentObject(motionManager)) {
                     Text("Gyro control")
                 }
-                NavigationLink(destination: RoomSetupView().environmentObject(roomModel)) {
-                    Text("3D mapper (experimental)")
+                NavigationLink(destination: EmptyView()) {
+                    Text("Precision control")
+                }
+            }
+            Section(header: Text("Settings").font(.headline)) {
+                NavigationLink(destination: PresetManagerView()) {
+                    Text("Preset manager")
                 }
             }
         }
@@ -32,7 +36,6 @@ struct MovingHeadSettings: View {
         MovingHeadSettings()
             .environmentObject(LaserConfig())
             .environmentObject(MotionManager())
-            .environmentObject(RoomModel())
     }
 }
 

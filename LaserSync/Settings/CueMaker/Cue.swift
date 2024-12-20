@@ -74,7 +74,7 @@ extension Cue {
             Cue(color: .blue, name: "Laser Show", includeLaser: true, laserMode: .auto),
             Cue(name: "Moving Head Rotation", includeMovingHead: true, movingHeadMode: .auto),
             Cue(color: .orange, name: "Full Light Show", includeLaser: true, includeMovingHead: true),
-            Cue(color: .yellow, name: "Spotlight", includeLaser: false, includeMovingHead: false)
+            Cue(color: .yellow, name: "Spotlight", includeLaser: false, includeMovingHead: true)
         ]
         
         let encoder = JSONEncoder()
