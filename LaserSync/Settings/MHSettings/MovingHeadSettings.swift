@@ -17,7 +17,7 @@ struct MovingHeadSettings: View {
                 NavigationLink(destination: GyroControlView().environmentObject(motionManager)) {
                     Text("Gyro control")
                 }
-                NavigationLink(destination: EmptyView()) {
+                NavigationLink(destination: PrecisionControlView()) {
                     Text("Precision control")
                 }
             }
