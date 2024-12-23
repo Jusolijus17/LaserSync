@@ -10,19 +10,7 @@ import UIKit
 
 struct HomeView: View {
     @EnvironmentObject var laserConfig: LaserConfig
-    @State private var isRequestInProgress = false
-    @State private var isBlinking = false
-    @State private var blinkingTimer: Timer?
-    @State private var networkErrorCount = 0
-    @State private var showRetry = false
-    @State private var isHorizontalAnimationBlinking = false
-    @State private var isVerticalAnimationBlinking = false
-    @State private var horizontalBlinkTimer: Timer?
-    @State private var verticalBlinkTimer: Timer?
-    
-    @State var touchDownTime: Date?
-    @State var isPressed = false
-    @State private var timer: Timer?
+    @StateObject private var homeController = HomeController()
     
     var body: some View {
         VStack {
@@ -33,24 +21,24 @@ struct HomeView: View {
                     .foregroundColor(.white)
                     .onChange(of: laserConfig.networkErrorCount) {
                         if laserConfig.networkErrorCount >= 3 {
-                            self.showRetry = true
-                            self.stopBlinking()
+                            homeController.showRetry = true
+                            homeController.stopBlinking()
                         }
                     }
                 
                 Circle()
-                    .fill(getBpmIndicatorColor())
+                    .fill(homeController.getBpmIndicatorColor())
                     .frame(width: 20, height: 20)
-                    .opacity(isBlinking || laserConfig.currentBpm == 0 ? 1.0 : 0.0)
+                    .opacity(homeController.isBlinking || laserConfig.currentBpm == 0 ? 1.0 : 0.0)
             }
             
             Button(action: {
                 laserConfig.restartBpmUpdate()
-                showRetry = false
+                homeController.showRetry = false
             }) {
                 Label("Retry", systemImage: "arrow.clockwise.circle")
             }
-            .opacity(showRetry ? 1 : 0)
+            .opacity(homeController.showRetry ? 1 : 0)
 
             
             TabView {
@@ -63,8 +51,11 @@ struct HomeView: View {
         .background(Color.black.edgesIgnoringSafeArea(.all))
         .onChange(of: laserConfig.currentBpm) {
             if laserConfig.currentBpm != 0 {
-                self.restartBlinking()
+                homeController.restartBlinking()
             }
+        }
+        .onAppear {
+            homeController.setLaserConfig(laserConfig)
         }
     }
     
@@ -84,23 +75,23 @@ struct HomeView: View {
                 // Color
                 Button(action: {
                     hapticFeedback()
-                    changeMHColor()
+                    homeController.changeMHColor()
                 }) {
                     Rectangle()
-                        .fill(laserConfig.currentMHColor)
+                        .fill(laserConfig.mHColor)
                         .frame(height: 150)
                         .background {
-                            if laserConfig.currentMHColorName == "auto" {
+                            if laserConfig.mHColor == .clear {
                                 RoundedRectangle(cornerRadius: 10)
                                     .multicolor()
                             }
                         }
                         .overlay(content: {
                             ZStack {
-                                Text(laserConfig.currentMHColorName.capitalized)
+                                Text(laserConfig.mHColor.name?.capitalized ?? "Auto")
                                     .font(.title2)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(.white)
+                                    .foregroundStyle(laserConfig.mHColor == .white ? .black : .white)
                                 VStack {
                                     Spacer()
                                     Text("Color")
@@ -115,51 +106,42 @@ struct HomeView: View {
                 }
                 
                 // Manual Strobe
-                Button(action: {
-                }) {
-                    Rectangle()
-                        .fill(isPressed ? .white : .gray)
-                        .frame(height: 150)
-                        .overlay(content: {
-                            ZStack {
-                                Image(systemName: "exclamationmark.warninglight")
-                                    .font(.largeTitle)
-                                    .foregroundStyle(.white)
-                                VStack {
-                                    Spacer()
-                                    Text("Strobe")
-                                        .font(.title2)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white.opacity(0.5))
-                                        .padding()
-                                }
+                Rectangle()
+                    .fill(homeController.isPressed ? .white : .gray)
+                    .frame(height: 150)
+                    .overlay(content: {
+                        ZStack {
+                            Image(systemName: "exclamationmark.warninglight")
+                                .font(.largeTitle)
+                                .foregroundStyle(.white)
+                            VStack {
+                                Spacer()
+                                Text("Strobe")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(.white.opacity(0.5))
+                                    .padding()
                             }
-                        })
-                        .cornerRadius(10)
-                        .simultaneousGesture(
-                            DragGesture(minimumDistance: 0)
-                                .onChanged({ value in
-                                    if touchDownTime == nil {
-                                        touchDownTime = value.time
-                                        hapticFeedback()
-                                        laserConfig.startMHStrobe()
-                                        timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                                            isPressed.toggle()
-                                        }
-                                    }
-                                })
-                                .onEnded({ value in
-                                    laserConfig.stopMHStrobe()
-                                    if let touchDownTime,
-                                       value.time.timeIntervalSince(touchDownTime) >= 1 { }
-                                    hapticFeedback()
-                                    self.touchDownTime = nil
-                                    isPressed = false
-                                    timer?.invalidate()
-                                    timer = nil
-                                })
-                        )
-                }
+                        }
+                    })
+                    .cornerRadius(10)
+                    .onLongPressGesture(minimumDuration: 0.1) {
+                        hapticFeedback()
+                        print("Started")
+                        laserConfig.startMHStrobe()
+                        homeController.timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
+                            homeController.isPressed.toggle()
+                        }
+                    } onPressingChanged: { isPressing in
+                        if !isPressing && homeController.timer != nil {
+                            homeController.touchDownTime = nil
+                            print("Ended")
+                            laserConfig.stopMHStrobe()
+                            homeController.timer?.invalidate()
+                            homeController.timer = nil
+                            homeController.isPressed = false
+                        }
+                    }
                 
                 // Mode
                 SquareButton(title: "Mode", action: {
@@ -213,26 +195,18 @@ struct HomeView: View {
                 }
             }
             
-            CustomSliderView(sliderValue: $laserConfig.mHBrightness, title: "Brightness")
-                .onChange(of: laserConfig.mHBrightness) { _, newValue in
-                    if newValue > 0 {
-                        laserConfig.mHMode = .manual
-                    } else {
-                        laserConfig.mHMode = .blackout
-                    }
-                    laserConfig.setMHDimmer()
-                    if newValue == 0 || newValue == 100 {
-                        hapticFeedback()
-                    }
+            CustomSliderView(sliderValue: $laserConfig.mHBrightness, title: "Brightness", onValueChange: { newValue in
+                if newValue > 0 {
+                    laserConfig.mHMode = .manual
+                } else {
+                    laserConfig.mHMode = .blackout
                 }
+                laserConfig.setMHBrightness()
+            })
             
-            CustomSliderView(sliderValue: $laserConfig.mHStrobe, title: "Strobe")
-                .onChange(of: laserConfig.mHStrobe) { _, newValue in
-                    laserConfig.setMHStrobe()
-                    if newValue == 0 || newValue == 100 {
-                        hapticFeedback()
-                    }
-                }
+            CustomSliderView(sliderValue: $laserConfig.mHStrobe, title: "Strobe", onValueChange: { _ in
+                laserConfig.setMHStrobe()
+            })
         }
         .padding(.horizontal, 20)
     }
@@ -252,20 +226,20 @@ struct HomeView: View {
                 // Color
                 Button(action: {
                     hapticFeedback()
-                    changeLaserColor()
+                    homeController.changeLaserColor()
                 }) {
                     Rectangle()
-                        .fill(laserConfig.currentLaserColor)
+                        .fill(laserConfig.laserColor)
                         .frame(height: 150)
                         .background {
-                            if laserConfig.currentLaserColorName == "multicolor" {
+                            if laserConfig.laserColor == .clear {
                                 RoundedRectangle(cornerRadius: 10)
                                     .multicolor()
                             }
                         }
                         .overlay(content: {
                             ZStack {
-                                Text(laserConfig.currentLaserColorName.capitalized)
+                                Text(laserConfig.laserColor.name?.capitalized ?? "Multicolor")
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .foregroundStyle(.white)
@@ -284,7 +258,7 @@ struct HomeView: View {
                 
                 // Pattern
                 SquareButton(title: "Pattern") {
-                    changePattern()
+                    homeController.changePattern()
                 } content: {
                     AnyView(
                         laserConfig.currentLaserPattern.shape
@@ -295,7 +269,7 @@ struct HomeView: View {
                 
                 // Mode
                 SquareButton(title: "Mode", action: {
-                    toggleLaserMode()
+                    homeController.toggleLaserMode()
                 }, backgroundColor: laserConfig.laserMode == .manual ? Color.green : Color.gray) {
                     AnyView(
                         Text(laserConfig.laserMode.rawValue.capitalized)
@@ -311,7 +285,7 @@ struct HomeView: View {
                         HStack {
                             Button {
                                 hapticFeedback()
-                                decrementMultiplier()
+                                homeController.decrementMultiplier()
                             } label: {
                                 Image(systemName: "minus")
                                     .font(.title2)
@@ -324,7 +298,7 @@ struct HomeView: View {
                                     }
                             }
                             
-                            Text(multiplierText())
+                            Text(homeController.multiplierText())
                                 .font(.title2)
                                 .fontWeight(.semibold)
                                 .foregroundColor(.white)
@@ -332,7 +306,7 @@ struct HomeView: View {
                             
                             Button {
                                 hapticFeedback()
-                                incrementMultiplier()
+                                homeController.incrementMultiplier()
                             } label: {
                                 Image(systemName: "plus")
                                     .font(.title2)
@@ -357,12 +331,12 @@ struct HomeView: View {
                 }
                 .frame(height: 150)
                 .frame(maxWidth: .infinity)
-                .background(multiplierColor())
+                .background(homeController.multiplierColor())
                 .cornerRadius(10)
                 
                 SquareButton(title: "H-Animation", action: {
-                    toggleHorizontalAnimation()
-                }, backgroundColor: isHorizontalAnimationBlinking ? Color.yellow : Color.gray) {
+                    homeController.toggleHorizontalAnimation()
+                }, backgroundColor: homeController.isHorizontalAnimationBlinking ? Color.yellow : Color.gray) {
                     AnyView(
                         Text(laserConfig.horizontalAnimationEnabled ? "ON" : "OFF")
                             .font(.title2)
@@ -372,19 +346,19 @@ struct HomeView: View {
                 }
                 .onAppear {
                     if laserConfig.horizontalAnimationEnabled {
-                        startHorizontalBlinking()
+                        homeController.startHorizontalBlinking()
                     } else {
-                        stopHorizontalBlinking()
+                        homeController.stopHorizontalBlinking()
                     }
                 }
                 .onDisappear {
-                    stopHorizontalBlinking()
-                    stopVerticalBlinking()
+                    homeController.stopHorizontalBlinking()
+                    homeController.stopVerticalBlinking()
                 }
                 
                 SquareButton(title: "V-Animation", action: {
-                    toggleVerticalAnimation()
-                }, backgroundColor: isVerticalAnimationBlinking ? Color.yellow : Color.gray) {
+                    homeController.toggleVerticalAnimation()
+                }, backgroundColor: homeController.isVerticalAnimationBlinking ? Color.yellow : Color.gray) {
                     AnyView(
                         Text(laserConfig.verticalAnimationEnabled ? "ON" : "OFF")
                             .font(.title2)
@@ -394,162 +368,13 @@ struct HomeView: View {
                 }
                 .onAppear {
                     if laserConfig.verticalAnimationEnabled {
-                        startVerticalBlinking()
+                        homeController.startVerticalBlinking()
                     } else {
-                        stopVerticalBlinking()
+                        homeController.stopVerticalBlinking()
                     }
                 }
             }
             .padding(.horizontal, 20)
-        }
-    }
-    
-    func startBlinking() {
-        blinkingTimer = Timer.scheduledTimer(withTimeInterval: 60.0 / Double(laserConfig.currentBpm) / 2, repeats: true) { _ in
-            isBlinking.toggle()
-        }
-    }
-
-    func stopBlinking() {
-        blinkingTimer?.invalidate()
-        blinkingTimer = nil
-        isBlinking = true
-    }
-    
-    func restartBlinking() {
-        stopBlinking()
-        startBlinking()
-    }
-    
-    func getBpmIndicatorColor() -> Color {
-        if !laserConfig.successfullBpmFetch && !showRetry {
-            return Color.orange
-        } else if showRetry {
-            return Color.red
-        } else {
-            return Color.green
-        }
-    }
-
-    func changeLaserColor() {
-        var newColorIndex: Int
-        repeat {
-            newColorIndex = Int.random(in: 0..<laserConfig.laserColors.count)
-        } while newColorIndex == laserConfig.currentLaserColorIndex
-        laserConfig.currentLaserColorIndex = newColorIndex
-        laserConfig.setColor()
-    }
-    
-    func changeMHColor() {
-        var newColorIndex: Int
-        repeat {
-            newColorIndex = Int.random(in: 0..<laserConfig.laserColors.count)
-        } while newColorIndex == laserConfig.currentMHColorIndex
-        laserConfig.currentMHColorIndex = newColorIndex
-        laserConfig.setColor()
-    }
-
-    func changePattern() {
-        var newPattern: LaserPattern
-        repeat {
-            newPattern = LaserPattern.allCases.randomElement()!
-        } while newPattern == laserConfig.currentLaserPattern
-        laserConfig.currentLaserPattern = newPattern
-        laserConfig.setPattern()
-    }
-
-    func toggleLaserMode() {
-        laserConfig.laserMode = laserConfig.laserMode == .manual ? .blackout : .manual
-        laserConfig.setMode()
-    }
-    
-    func startHorizontalBlinking() {
-        isHorizontalAnimationBlinking = true
-        horizontalBlinkTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            isHorizontalAnimationBlinking.toggle()
-        }
-    }
-
-    func stopHorizontalBlinking() {
-        horizontalBlinkTimer?.invalidate()
-        horizontalBlinkTimer = nil
-        isHorizontalAnimationBlinking = false
-    }
-
-    func startVerticalBlinking() {
-        isVerticalAnimationBlinking = true
-        verticalBlinkTimer = Timer.scheduledTimer(withTimeInterval: 0.5, repeats: true) { _ in
-            isVerticalAnimationBlinking.toggle()
-        }
-    }
-
-    func stopVerticalBlinking() {
-        verticalBlinkTimer?.invalidate()
-        verticalBlinkTimer = nil
-        isVerticalAnimationBlinking = false
-    }
-
-    func toggleHorizontalAnimation() {
-        laserConfig.horizontalAnimationEnabled.toggle()
-        if laserConfig.horizontalAnimationEnabled {
-            startHorizontalBlinking()
-        } else {
-            stopHorizontalBlinking()
-        }
-        laserConfig.setHorizontalAnimation()
-    }
-
-    func toggleVerticalAnimation() {
-        laserConfig.verticalAnimationEnabled.toggle()
-        if laserConfig.verticalAnimationEnabled {
-            startVerticalBlinking()
-        } else {
-            stopVerticalBlinking()
-        }
-        laserConfig.setVerticalAnimation()
-    }
-
-
-    func incrementMultiplier() {
-        laserConfig.bpmMultiplier *= 2
-        laserConfig.setMultiplier(multiplier: laserConfig.bpmMultiplier)
-        laserConfig.restartBpmSyncTimer()
-    }
-
-    func decrementMultiplier() {
-        laserConfig.bpmMultiplier = max(1 / 8, laserConfig.bpmMultiplier / 2)
-        laserConfig.setMultiplier(multiplier: laserConfig.bpmMultiplier)
-        laserConfig.restartBpmSyncTimer()
-    }
-
-    func multiplierText() -> String {
-        if laserConfig.bpmMultiplier == 1.0 {
-            return "1x"
-        } else if laserConfig.bpmMultiplier < 1.0 {
-            return "÷\(Int(1 / laserConfig.bpmMultiplier))"
-        } else {
-            return "x\(Int(laserConfig.bpmMultiplier))"
-        }
-    }
-    
-    func multiplierColor() -> Color {
-        switch laserConfig.bpmMultiplier {
-        case 1/8:
-            return Color.purple
-        case 1/4:
-            return Color.blue
-        case 1/2:
-            return Color.cyan
-        case 1.0:
-            return Color.gray
-        case 2.0:
-            return Color.green
-        case 4.0:
-            return Color.yellow
-        case 8.0:
-            return Color.orange
-        default:
-            return Color.red
         }
     }
     

@@ -9,10 +9,12 @@ import SwiftUI
 
 struct SummaryView: View {
     @Binding var cue: Cue
+    var onlySummary = false
     @State private var showingAlert = false
+    @Environment(\.dismiss) private var dismiss
     
-    var onConfirm: () -> Void
-    var onEditSection: (String) -> Void
+    var onConfirm: () -> Void = {}
+    var onEditSection: (String) -> Void = { _ in }
     
     var body: some View {
         GeometryReader { _ in
@@ -46,29 +48,33 @@ struct SummaryView: View {
                     .padding()
                 }
                 
-                Spacer()
-                
-                VStack(alignment: .leading) {
-                    Text("Cue type")
-                        .font(.title2)
-                        .padding(.horizontal)
-                    Picker("Type", selection: $cue.type) {
-                        ForEach(CueType.allCases) { type in
-                            Text(type.rawValue.capitalized)
-                                .tag(type)
+                if !onlySummary {
+                    Spacer()
+                    
+                    VStack(alignment: .leading) {
+                        Text("Cue type")
+                            .font(.title2)
+                            .padding(.horizontal)
+                        Picker("Type", selection: $cue.type) {
+                            ForEach(CueType.allCases) { type in
+                                Text(type.rawValue.capitalized)
+                                    .tag(type)
+                            }
                         }
-                    }
-                    .pickerStyle(.segmented)
-                    .padding(.horizontal)
-                    Text("Cue color")
-                        .font(.title2)
+                        .pickerStyle(.segmented)
                         .padding(.horizontal)
-                    let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .gray]
-                    ColorSelectorView(selectedColor: $cue.color, colors: colors)
+                        Text("Cue color")
+                            .font(.title2)
+                            .padding(.horizontal)
+                        let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .gray]
+                        ColorSelectorView(selectedColor: $cue.color, colors: colors)
+                    }
                 }
                 
                 // Bouton de confirmation
-                Button(action: {showingAlert.toggle()}) {
+                Button {
+                    confirm()
+                } label: {
                     Text("Confirm")
                         .font(.headline)
                         .frame(maxWidth: .infinity)
@@ -92,6 +98,14 @@ struct SummaryView: View {
             }
         }
         .ignoresSafeArea(.keyboard)
+    }
+    
+    private func confirm() {
+        if onlySummary {
+            dismiss()
+        } else {
+            showingAlert.toggle()
+        }
     }
     
     private func getLaserDetails() -> [(String, String)] {
@@ -249,7 +263,7 @@ struct ColorSelectorView: View {
 }
 
 struct SummaryViewPreview: View {
-    @State var cue = Cue().preview()
+    @State var cue = Cue.preview()
     var body: some View {
         SummaryView(cue: $cue, onConfirm: {}, onEditSection: {_ in})
     }

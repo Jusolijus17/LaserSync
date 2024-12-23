@@ -94,8 +94,8 @@ struct SelectLightsView: View {
             
             Spacer()
             
-            NavigationLink(destination: EditCueView()) {
-                Text("Edit cues")
+            NavigationLink(destination: CueSettingsView()) {
+                Text("Settings")
                     .font(.headline)
                     .frame(maxWidth: .infinity)
                     .padding()

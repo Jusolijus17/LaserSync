@@ -12,26 +12,102 @@ struct PrecisionControlView: View {
     @State private var circularAngle: Angle = .degrees(0)
     @State private var verticalOffset: CGFloat = 0
     
+    @State private var showingAlert: Bool = false
+    @State private var newPresetName = ""
+    @State private var reset = false
+    
+    @State private var showingErrorAlert = false
+    @State private var errorMessage = ""
+
     var body: some View {
-        HStack(spacing: 50) {
-            JoystickView(angle: $circularAngle)
-            VerticalJoystickView(angle: $verticalOffset, width: 50, height: 300)
+        GeometryReader { _ in
+            VStack {
+                Spacer()
+                
+                HStack(spacing: 50) {
+                    JoystickView(angle: $circularAngle, reset: $reset)
+                    VerticalJoystickView(angle: $verticalOffset, reset: $reset, width: 50, height: 300)
+                }
+                
+                Text("Pan: \(Int(circularAngle.degrees))")
+                Text("Tilt: \(Int(verticalOffset))")
+                
+                Spacer()
+                
+                // Bouton pour réinitialiser la position
+                Button {
+                    resetPosition()
+                } label: {
+                    Text("Reset position")
+                }
+                
+                // Save preset
+                Button(action: {
+                    showingAlert = true
+                }) {
+                    Text("Save Preset")
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal)
+            }
+            .padding(.bottom)
+            .onChange(of: circularAngle) { _, newValue in
+                laserConfig.sendGyroData(pan: Double(newValue.degrees), tilt: Double(verticalOffset))
+            }
+            .onChange(of: verticalOffset) { _, newValue in
+                laserConfig.sendGyroData(pan: Double(circularAngle.degrees), tilt: Double(newValue))
+            }
+            .alert("New Preset", isPresented: $showingAlert) {
+                TextField("Preset Name", text: $newPresetName)
+                Button("Save", action: savePreset)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Enter a name for the new preset.")
+            }
+            .alert("Error", isPresented: $showingErrorAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(errorMessage)
+            }
+            .navigationBarTitle("Precision control")
         }
-        VStack {
-            Text("Pan: \(Int(circularAngle.degrees))")
-            Text("Titlt: \(Int(verticalOffset))")
+        .ignoresSafeArea(.keyboard)
+    }
+    
+    private func savePreset() {
+        guard !newPresetName.isEmpty else { return }
+
+        let newPreset = GyroPreset(
+            id: UUID(),
+            name: newPresetName,
+            pan: Double(circularAngle.degrees),
+            tilt: Double(verticalOffset)
+        )
+
+        do {
+            try GyroPreset.addPreset(newPreset)
+            newPresetName = ""
+        } catch {
+            errorMessage = error.localizedDescription
+            showingErrorAlert = true
         }
-        .onChange(of: circularAngle) { _, newValue in
-            laserConfig.sendGyroData(pan: Double(newValue.degrees), tilt: Double(verticalOffset))
-        }
-        .onChange(of: verticalOffset) { _, newValue in
-            laserConfig.sendGyroData(pan: Double(circularAngle.degrees), tilt: Double(newValue))
-        }
+    }
+    
+    private func resetPosition() {
+        reset = true
+        circularAngle = .degrees(0)
+        verticalOffset = 180
+        laserConfig.sendGyroData(pan: 0, tilt: 0)
     }
 }
 
 struct JoystickView: View {
     @Binding var angle: Angle // Liaison pour transmettre l'angle
+    @Binding var reset: Bool
     @State private var location: CGPoint = .zero
     @State private var innerCircleLocation: CGPoint = .zero
     @GestureState private var fingerLocation: CGPoint? = nil
@@ -61,9 +137,17 @@ struct JoystickView: View {
             }
             .onTapGesture(count: 2) {
                 innerCircleLocation = CGPoint(x: location.x, y: location.y - bigCircleRadius + innerCircleRadius)
-                convertAngle(-.pi/2)
+                convertAngle(Double(Angle(degrees: -90).radians))
                 let generator = UIImpactFeedbackGenerator(style: .medium)
                 generator.impactOccurred()
+            }
+            .onChange(of: reset) { _, newValue in
+                if newValue {
+                    let center = CGPoint(x: geo.size.width / 2, y: geo.size.height / 2)
+                    location = center
+                    innerCircleLocation = CGPoint(x: location.x, y: location.y - bigCircleRadius + innerCircleRadius)
+                    reset = false
+                }
             }
         }
         .frame(width: bigCircleRadius * 2, height: bigCircleRadius * 2)
@@ -99,6 +183,7 @@ struct JoystickView: View {
 
 struct VerticalJoystickView: View {
     @Binding var angle: CGFloat // Angle transmis à la vue parente
+    @Binding var reset: Bool
     let width: CGFloat
     let height: CGFloat
 
@@ -138,6 +223,14 @@ struct VerticalJoystickView: View {
             let generator = UIImpactFeedbackGenerator(style: .medium)
             generator.impactOccurred()
         })
+        .onChange(of: reset, { _, newValue in
+            if newValue {
+                let halfHeight = height / 2
+                offset = -halfHeight + (width / 2)
+                angle = 180
+                reset = false
+            }
+        })
         .frame(width: width, height: height)
     }
 
@@ -149,6 +242,8 @@ struct VerticalJoystickView: View {
 }
 
 #Preview {
-    PrecisionControlView()
-        .environmentObject(LaserConfig())
+    NavigationView {
+        PrecisionControlView()
+            .environmentObject(LaserConfig())
+    }
 }

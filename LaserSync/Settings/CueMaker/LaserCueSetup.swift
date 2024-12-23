@@ -167,7 +167,7 @@ struct LaserCueSetup: View {
 }
 
 struct LaserCueSetupPreview: View {
-    @State private var cue = Cue().preview()
+    @State private var cue = Cue.preview()
     var body: some View {
         LaserCueSetup(cue: $cue, onNext: {})
     }

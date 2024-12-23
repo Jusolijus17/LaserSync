@@ -11,6 +11,7 @@ import UIKit
 struct CustomSliderView: View {
     @Binding var sliderValue: Double
     @State var title: String
+    var onValueChange: ((Double) -> Void)?
 
     @State private var dragOffset: CGFloat = 0
     @State private var hasTriggeredHapticAtLimit: Bool = false
@@ -64,6 +65,7 @@ struct CustomSliderView: View {
 
                         let newValue = min(max(0, (locationX + dragOffset) / size.width * 100), 100)
                         sliderValue = newValue
+                        onValueChange?(newValue)
 
                         if sliderValue == 0 || sliderValue == 100 {
                             if !hasTriggeredHapticAtLimit {
@@ -109,7 +111,9 @@ struct CustomSlider_InteractivePreview: View {
     @State private var sliderValue: Double = 50
 
     var body: some View {
-        CustomSliderView(sliderValue: $sliderValue, title: "Test")
+        CustomSliderView(sliderValue: $sliderValue, title: "Test", onValueChange: { _ in
+            
+        })
     }
 }
 

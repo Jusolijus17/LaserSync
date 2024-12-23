@@ -70,3 +70,19 @@ extension Color: Codable {
         self = Color(.sRGB, red: red, green: green, blue: blue, opacity: opacity)
     }
 }
+
+extension Color {
+    var name: String? {
+        switch self {
+        case Color.red: return "red"
+        case Color.blue: return "blue"
+        case Color.green: return "green"
+        case Color.pink: return "pink"
+        case Color.cyan: return "cyan"
+        case Color.yellow: return "yellow"
+        case Color.orange: return "orange"
+        case Color.white: return "white"
+        default: return nil
+        }
+    }
+}

@@ -178,7 +178,7 @@ struct MovingHeadCueSetup: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
-            .padding([.horizontal, .top])
+            .padding()
             .background()
         }
     }
@@ -222,7 +222,7 @@ struct MovingHeadCueSetup: View {
 }
 
 struct MovingHeadCueSetupPreview: View {
-    @State private var cue = Cue().preview()
+    @State private var cue = Cue.preview()
     var body: some View {
         MovingHeadCueSetup(cue: $cue, onNext: {})
     }

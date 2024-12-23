@@ -33,7 +33,7 @@ struct Cue: Identifiable, Codable {
 }
 
 extension Cue {
-    func preview() -> Cue {
+    static func preview() -> Cue {
         let cue = Cue(includeLaser: true, laserMode: .auto, includeMovingHead: true, movingHeadMode: .auto)
         return cue
     }
@@ -41,7 +41,7 @@ extension Cue {
     mutating func save() {
         let encoder = JSONEncoder()
         
-        var savedCues: [Cue] = loadCues()
+        var savedCues: [Cue] = Cue.loadCues()
         
         savedCues.append(self)
         
@@ -55,7 +55,7 @@ extension Cue {
         }
     }
     
-    func loadCues() -> [Cue] {
+    static func loadCues() -> [Cue] {
         let decoder = JSONDecoder()
         
         if let data = UserDefaults.standard.data(forKey: "savedCues") {

@@ -14,16 +14,16 @@ struct EditCueView: View {
 }
 
 struct CueListView: View {
-    @State private var cues: [Cue] = [] // Stocker les cues chargées
+    @State private var cues: [Cue] = []
     
     var body: some View {
         List {
             if cues.isEmpty {
                 Text("No cues")
             } else {
-                ForEach(cues) { cue in
-                    NavigationLink(destination: CueMakerView(currentStep: getCueMakerStep(cue))) {
-                        CueRowView(cue: cue)
+                ForEach($cues) { cue in
+                    NavigationLink(destination: SummaryView(cue: cue, onlySummary: true)) {
+                        CueRowView(cue: cue.wrappedValue)
                     }
                 }
                 .onDelete(perform: deleteCue)
@@ -32,7 +32,7 @@ struct CueListView: View {
         .navigationTitle("Saved Cues")
         .navigationBarTitleDisplayMode(.inline)
         .onAppear {
-            self.cues = Cue().loadCues()
+            self.cues = Cue.loadCues()
         }
     }
     

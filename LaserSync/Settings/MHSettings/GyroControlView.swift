@@ -12,102 +12,112 @@ struct GyroControlView: View {
     @EnvironmentObject var laserConfig: LaserConfig
     @EnvironmentObject var motionManager: MotionManager
     
-    @State private var presets: [GyroPreset] = GyroPreset.loadPresets()
     @State private var showingAlert: Bool = false
     @State private var newPresetName = ""
     @State private var isDetecting: Bool = false // État de la détection
     @State private var lastMotionPan: Double = 0
     @State private var lastMotionTilt: Double = 0
+    
+    @State private var showingErrorAlert = false
+    @State private var errorMessage = ""
 
     var body: some View {
-        VStack {
-            Spacer()
-
-            VStack(spacing: 10) {
-                // Affichage des valeurs de pan et tilt
-                Text("Pan (Yaw): \(motionManager.pan, specifier: "%.2f")°")
-                Text("Tilt (Pitch): \(motionManager.tilt, specifier: "%.2f")°")
-            }
-
-            GeometryReader { geometry in
-                ZStack {
-                    gridWithAxes(in: geometry.size)
-                    visualisationCircle(in: geometry.size)
+        GeometryReader { _ in
+            VStack {
+                Spacer()
+                
+                VStack(spacing: 10) {
+                    // Affichage des valeurs de pan et tilt
+                    Text("Pan (Yaw): \(motionManager.pan, specifier: "%.2f")°")
+                    Text("Tilt (Pitch): \(motionManager.tilt, specifier: "%.2f")°")
                 }
-            }
-            .frame(height: 200)
-            .padding([.top, .horizontal])
-
-            // Switch pour inverser les commandes
-            Toggle(isOn: $motionManager.isInverted) {
-                Text("Invert controls").font(.headline)
-            }
-            .padding()
-            .toggleStyle(SwitchToggleStyle(tint: .blue))
-            
-            Spacer()
-
-            // Bouton pour réinitialiser la position
-            Button {
-                resetPosition()
-            } label: {
-                Text("Reset position")
-            }
-            
-            // Save preset
-            Button(action: {
-                if isDetecting {
-                    lastMotionPan = motionManager.pan
-                    lastMotionTilt = motionManager.tilt
+                
+                GeometryReader { geometry in
+                    ZStack {
+                        gridWithAxes(in: geometry.size)
+                        visualisationCircle(in: geometry.size)
+                    }
                 }
-                showingAlert = true
-            }) {
-                Text("Save Preset")
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(Color.blue)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
+                .frame(height: 200)
+                .padding([.top, .horizontal])
+                
+                // Switch pour inverser les commandes
+                Toggle(isOn: $motionManager.isInverted) {
+                    Text("Invert controls").font(.headline)
+                }
+                .padding()
+                .toggleStyle(SwitchToggleStyle(tint: .blue))
+                
+                Spacer()
+                
+                // Bouton pour réinitialiser la position
+                Button {
+                    resetPosition()
+                } label: {
+                    Text("Reset position")
+                }
+                
+                // Save preset
+                Button(action: {
+                    if isDetecting {
+                        lastMotionPan = motionManager.pan
+                        lastMotionTilt = motionManager.tilt
+                    }
+                    showingAlert = true
+                }) {
+                    Text("Save Preset")
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(Color.blue)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .padding(.horizontal)
+                
+                // Bouton pour démarrer ou arrêter la détection
+                Button(action: {
+                    if isDetecting {
+                        lastMotionPan = motionManager.pan
+                        lastMotionTilt = motionManager.tilt
+                        print("Motion:", lastMotionPan, lastMotionTilt)
+                        stopMotionUpdates()
+                    } else {
+                        startMotionUpdates()
+                    }
+                    isDetecting.toggle()
+                }) {
+                    Text(isDetecting ? "Arrêter la détection" : "Démarrer la détection")
+                        .padding()
+                        .frame(maxWidth: .infinity)
+                        .background(isDetecting ? Color.red : Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
+                }
+                .padding([.horizontal, .bottom])
             }
-            .padding(.horizontal)
-
-            // Bouton pour démarrer ou arrêter la détection
-            Button(action: {
+            .navigationTitle("Gyro control")
+            .navigationBarTitleDisplayMode(.inline)
+            .onDisappear {
+                // Arrêter les mises à jour si la vue disparaît
                 if isDetecting {
-                    lastMotionPan = motionManager.pan
-                    lastMotionTilt = motionManager.tilt
-                    print("Motion:", lastMotionPan, lastMotionTilt)
                     stopMotionUpdates()
-                } else {
-                    startMotionUpdates()
+                    isDetecting = false
                 }
-                isDetecting.toggle()
-            }) {
-                Text(isDetecting ? "Arrêter la détection" : "Démarrer la détection")
-                    .padding()
-                    .frame(maxWidth: .infinity)
-                    .background(isDetecting ? Color.red : Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
             }
-            .padding([.horizontal, .bottom])
-        }
-        .navigationTitle("Gyro control")
-        .navigationBarTitleDisplayMode(.inline)
-        .onDisappear {
-            // Arrêter les mises à jour si la vue disparaît
-            if isDetecting {
-                stopMotionUpdates()
-                isDetecting = false
+            .alert("New Preset", isPresented: $showingAlert) {
+                TextField("Preset Name", text: $newPresetName)
+                Button("Save", action: savePreset)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("Enter a name for the new preset.")
+            }
+            .alert("Error", isPresented: $showingErrorAlert) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text(errorMessage)
             }
         }
-        .alert("New Preset", isPresented: $showingAlert) {
-            TextField("Preset Name", text: $newPresetName)
-            Button("Save", action: savePreset)
-            Button("Cancel", role: .cancel) {}
-        } message: {
-            Text("Enter a name for the new preset.")
-        }
+        .ignoresSafeArea(.keyboard)
     }
     
     private func savePreset() {
@@ -119,11 +129,16 @@ struct GyroControlView: View {
             pan: lastMotionPan,
             tilt: lastMotionTilt
         )
-        presets.append(newPreset)
-        GyroPreset.savePresets(presets) // Sauvegarde dans UserDefaults
-        newPresetName = "" // Réinitialiser le champ
+        
+        do {
+            try GyroPreset.addPreset(newPreset)
+            newPresetName = ""
+        } catch {
+            errorMessage = error.localizedDescription
+            showingErrorAlert = true
+        }
     }
-
+    
     private func visualisationCircle(in size: CGSize) -> some View {
         let width = size.width
         let height = size.height

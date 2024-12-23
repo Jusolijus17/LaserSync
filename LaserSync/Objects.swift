@@ -19,15 +19,6 @@ enum Light: String, Codable, CaseIterable, Identifiable {
     static var displayableCases: [Light] {
         return [.laser, .movingHead]
     }
-    
-    var rawValue: String {
-        switch self {
-        case .laser: return "Laser"
-        case .movingHead: return "Moving Head"
-        case .both: return "Both"
-        case .none: return "None"
-        }
-    }
 }
 
 enum CueMakerStep {
@@ -61,7 +52,35 @@ enum MovingHeadScene: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-enum MovingHeadColor: String, Codable, CaseIterable, Identifiable {
+protocol LightColors: Codable, Identifiable, CaseIterable {
+    var id: String { get }
+}
+
+enum CommonColor: String, LightColors {
+    case red
+    case blue
+    case green
+    case pink
+    case cyan
+    case yellow
+    
+    var id: String { return self.rawValue }
+}
+
+extension CommonColor {
+    var color: Color {
+        switch self {
+        case .red: return .red
+        case .blue: return .blue
+        case .green: return .green
+        case .pink: return .pink
+        case .cyan: return .cyan
+        case .yellow: return .yellow
+        }
+    }
+}
+
+enum MovingHeadColor: String, LightColors {
     case auto
     case red
     case blue
@@ -89,6 +108,10 @@ extension MovingHeadColor {
         case .white: return .white
         }
     }
+    
+    static func from(color: Color) -> MovingHeadColor? {
+        return MovingHeadColor.allCases.first(where: { $0.color == color })
+    }
 }
 
 enum BPMSyncMode: String, Codable {
@@ -105,7 +128,7 @@ enum LaserMode: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-enum LaserColor: String, Codable, CaseIterable, Identifiable {
+enum LaserColor: String, LightColors {
     case multicolor
     case red
     case blue
@@ -128,6 +151,10 @@ extension LaserColor {
         case .cyan: return .cyan
         case .yellow: return .yellow
         }
+    }
+    
+    static func from(color: Color) -> LaserColor? {
+        return LaserColor.allCases.first(where: { $0.color == color })
     }
 }
 
@@ -157,7 +184,7 @@ extension LaserPattern {
 
 struct GyroPreset: Identifiable, Codable {
     let id: UUID
-    let name: String
+    var name: String
     let pan: Double
     let tilt: Double
 }
@@ -184,6 +211,21 @@ extension GyroPreset {
             print("Erreur lors du chargement des presets : \(error)")
             return []
         }
+    }
+    
+    static func addPreset(_ preset: GyroPreset) throws {
+        var currentPresets = loadPresets()
+        
+        // Vérification du nom
+        if currentPresets.contains(where: { $0.name == preset.name }) {
+            throw NSError(domain: "", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "A preset with the same name already exists. Please choose a different name."
+            ])
+        }
+        
+        // Ajout et sauvegarde
+        currentPresets.append(preset)
+        savePresets(currentPresets)
     }
 }
 

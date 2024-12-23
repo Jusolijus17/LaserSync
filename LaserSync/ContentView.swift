@@ -18,7 +18,7 @@ struct ContentView: View {
                 }
                 .tag(0)
             
-            LaserColorView()
+            ColorSelectionView()
                 .tabItem {
                     Label("Color", systemImage: "paintbrush")
                 }

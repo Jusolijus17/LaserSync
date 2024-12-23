@@ -11,6 +11,7 @@ struct LaunchpadView: View {
     @EnvironmentObject var laserConfig: LaserConfig
     @EnvironmentObject var sharedStates: SharedStates
     @State private var cues: [Cue?] = [] // Liste des Cue, incluant des cases vides
+    @State private var cuePressed = false
     private let totalSlots = 12 // Nombre total de boutons dans la grille
     
     var body: some View {
@@ -19,12 +20,27 @@ struct LaunchpadView: View {
                 ForEach(0..<totalSlots, id: \.self) { index in
                     if index < cues.count, let cue = cues[index] {
                         // Bouton représentant un Cue existant
-                        Button {
-                            print("Cue tapped: \(cue.id)")
-                            laserConfig.setCue(cue)
-                        } label: {
-                            LaunchpadButton(color: cue.color)
-                        }
+                        LaunchpadButton(color: cue.color)
+                            .overlay {
+                                if sharedStates.showCueLabels {
+                                    Text("\(cue.name)")
+                                        .multilineTextAlignment(.center)
+                                        .font(.title2)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white)
+                                        .padding(.horizontal, 2)
+                                }
+                            }
+                            .onLongPressGesture(minimumDuration: 0.2) {
+                                cuePressed = true
+                                laserConfig.setCue(cue)
+                            } onPressingChanged: { isPressing in
+                                if !isPressing && cue.type == .temporary && cuePressed {
+                                    print("Temp cue stopped")
+                                    cuePressed = false
+                                    laserConfig.stopCue()
+                                }
+                            }
                     } else {
                         Button {
                             sharedStates.redirectToCueMaker()
@@ -45,7 +61,7 @@ struct LaunchpadView: View {
             .padding()
         }
         .onAppear {
-            cues = Cue().loadCues()
+            cues = Cue.loadCues()
         }
     }
 }
@@ -87,5 +103,6 @@ struct LaunchpadButton: View {
 
 #Preview {
     LaunchpadView()
+        .environmentObject(LaserConfig())
         .environmentObject(SharedStates())
 }
