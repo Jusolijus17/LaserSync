@@ -43,9 +43,7 @@ struct MovingHeadCueSetup: View {
                     Group {
                         // Scene
                         Group {
-                            Text("Set Scene")
-                                .font(.title2)
-                                .padding(.bottom)
+                            SettingToggle(settings: $cue.movingHeadSettings, setting: .scene, label: "Set Scene")
                             
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                                 ForEach(MovingHeadScene.allCases.reversed()) { scene in
@@ -66,15 +64,13 @@ struct MovingHeadCueSetup: View {
                                 }
                             }
                             .padding(.bottom)
+                            .disabledStyle(!cue.movingHeadSettings.contains(.scene))
                         }
-                        .disabled(cue.positionPreset != nil)
-                        .opacity(cue.positionPreset != nil ? 0.5 : 1.0)
+                        .disabledStyle(cue.positionPreset != nil)
                         
                         Group {
                             // Position
-                            Text("Set Position")
-                                .font(.title2)
-                                .padding(.bottom)
+                            SettingToggle(settings: $cue.movingHeadSettings, setting: .position, label: "Set Position")
                             
                             Menu {
                                 Button {
@@ -108,14 +104,12 @@ struct MovingHeadCueSetup: View {
                                     }
                             }
                             .padding(.bottom)
+                            .disabledStyle(!cue.movingHeadSettings.contains(.position))
                         }
-                        .disabled(cue.movingHeadScene != .off)
-                        .opacity(cue.movingHeadScene != .off ? 0.5 : 1.0)
+                        .disabledStyle(cue.movingHeadScene != .off)
                         
                         // Color
-                        Text("Set Color")
-                            .font(.title2)
-                            .padding(.bottom)
+                        SettingToggle(settings: $cue.movingHeadSettings, setting: .color, label: "Set Color")
                         
                         ScrollView(.horizontal, showsIndicators: false) {
                             HStack {
@@ -140,33 +134,30 @@ struct MovingHeadCueSetup: View {
                             }
                             .padding(.bottom)
                         }
-                        .disabled(cue.movingHeadColorFrequency != 0)
-                        .opacity(cue.movingHeadColorFrequency != 0 ? 0.5 : 1.0)
+                        .disabledStyle(cue.movingHeadColorFrequency != 0 || !cue.movingHeadSettings.contains(.color))
                         
                         CustomSliderView(sliderValue: $cue.movingHeadColorFrequency, title: "Speed")
                             .padding(.bottom)
+                            .disabledStyle(!cue.movingHeadSettings.contains(.color))
                         
                         // Strobe
-                        Text("Set Strobe")
-                            .font(.title2)
-                            .padding(.bottom)
+                        SettingToggle(settings: $cue.movingHeadSettings, setting: .strobe, label: "Set Strobe")
                         
                         CustomSliderView(sliderValue: $cue.movingHeadStrobeFrequency, title: "Intensity")
                             .padding(.bottom)
+                            .disabledStyle(!cue.movingHeadSettings.contains(.strobe))
                         
                         // Light Intensity
-                        Text("Set Brightness")
-                            .font(.title2)
-                            .padding(.bottom)
+                        SettingToggle(settings: $cue.movingHeadSettings, setting: .brightness, label: "Set Brightness")
                         
                         CustomSliderView(sliderValue: $cue.movingHeadBrightness, title: "Brightness")
                             .padding(.bottom)
+                            .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
                     }
-                    .disabled(cue.movingHeadMode != .manual)
-                    .opacity(cue.movingHeadMode != .manual ? 0.5 : 1.0)
+                    .disabledStyle(cue.movingHeadMode != .manual)
                 }
                 .padding()
-                .padding(.bottom, 50)
+                .padding(.bottom, 65)
             }
             
             Button(action: onNext) {

@@ -38,7 +38,7 @@ struct ColorSelectionView: View {
             .tag(1)
 
             VStack {
-                ColorGridImage(light: .movingHead)
+                ColorGridImage(light: .movingHead, width: 50, height: 50)
                 ColorGridView(
                     colors: movingHeadColor(),
                     masterColor: $laserConfig.bothColor,
@@ -49,6 +49,7 @@ struct ColorSelectionView: View {
                     laserConfig.setMHColorSpeed()
                 })
                 .padding(.horizontal, 20)
+                .padding(.top, 10)
             }
             .tag(2)
         }
@@ -126,6 +127,8 @@ struct ColorGridView: View {
 
 struct ColorGridImage: View {
     var light: Light
+    var width: CGFloat = 100
+    var height: CGFloat = 100
     
     var body: some View {
         HStack {
@@ -139,7 +142,7 @@ struct ColorGridImage: View {
                     .resizable()
                     .scaledToFit()
             }
-            .frame(width: 100, height: 100)
+            .frame(width: width, height: height)
             .padding()
             .background {
                 RoundedRectangle(cornerRadius: 20)

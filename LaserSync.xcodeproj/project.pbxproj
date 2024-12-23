@@ -20,6 +20,7 @@
 		3D4F89D22D12177F0004AA46 /* EditCueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4F89D12D12177F0004AA46 /* EditCueView.swift */; };
 		3D74839F2D165174009302B3 /* ColorSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D74839E2D165174009302B3 /* ColorSelectionView.swift */; };
 		3D7483A12D1773DE009302B3 /* HomeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7483A02D1773D1009302B3 /* HomeController.swift */; };
+		3D7483A42D19DBD8009302B3 /* SettingToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7483A32D19DBD8009302B3 /* SettingToggle.swift */; };
 		3D78D3802C37812700123283 /* LaserColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D37F2C37812700123283 /* LaserColorView.swift */; };
 		3D78D3822C37817500123283 /* PatternControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3812C37817500123283 /* PatternControlView.swift */; };
 		3D78D3842C37819F00123283 /* ModeControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3832C37819F00123283 /* ModeControlView.swift */; };
@@ -57,6 +58,7 @@
 		3D4F89D12D12177F0004AA46 /* EditCueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCueView.swift; sourceTree = "<group>"; };
 		3D74839E2D165174009302B3 /* ColorSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSelectionView.swift; sourceTree = "<group>"; };
 		3D7483A02D1773D1009302B3 /* HomeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeController.swift; sourceTree = "<group>"; };
+		3D7483A32D19DBD8009302B3 /* SettingToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingToggle.swift; sourceTree = "<group>"; };
 		3D78D37F2C37812700123283 /* LaserColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserColorView.swift; sourceTree = "<group>"; };
 		3D78D3812C37817500123283 /* PatternControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternControlView.swift; sourceTree = "<group>"; };
 		3D78D3832C37819F00123283 /* ModeControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeControlView.swift; sourceTree = "<group>"; };
@@ -113,6 +115,7 @@
 				3D4F89C92D120DAA0004AA46 /* LaserCueSetup.swift */,
 				3D2E2F1C2CF6A642002E06CF /* CueMakerView.swift */,
 				3D4F89D12D12177F0004AA46 /* EditCueView.swift */,
+				3D7483A32D19DBD8009302B3 /* SettingToggle.swift */,
 				3D9EBA2E2D16032400EE5C39 /* CueSettingsView.swift */,
 			);
 			path = CueMaker;
@@ -278,6 +281,7 @@
 				3D953A2B2CA3B93900E66C94 /* Objects.swift in Sources */,
 				3D953A2D2CA4E2B600E66C94 /* TapDetector.swift in Sources */,
 				3DDEEFAE2CE96EE700429363 /* ServerSettings.swift in Sources */,
+				3D7483A42D19DBD8009302B3 /* SettingToggle.swift in Sources */,
 				3D9EBA2B2D13D9BF00EE5C39 /* PrecisionControlView.swift in Sources */,
 				3D4F89C72D11DE620004AA46 /* SharedStates.swift in Sources */,
 				3D4F89CA2D120DB60004AA46 /* LaserCueSetup.swift in Sources */,

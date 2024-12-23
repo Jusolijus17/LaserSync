@@ -130,6 +130,7 @@ struct LaserCueSetup: View {
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
+            .padding(.bottom)
         }
         .padding()
     }

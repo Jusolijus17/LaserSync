@@ -262,7 +262,8 @@ class LaserConfig: ObservableObject {
     private func savePreviousState() {
         let laserColor = LaserColor.from(color: self.laserColor) ?? .multicolor
         let mHColor = MovingHeadColor.from(color: self.mHColor) ?? .red
-        self.previousState = Cue(id: UUID(), color: .red, name: "Previous", type: .definitive, includeLaser: true, laserColor: laserColor, laserBPMSyncModes: self.laserBPMSyncModes, laserMode: self.laserMode, laserPattern: self.currentLaserPattern, laserIncludedPatterns: [], includeMovingHead: true, movingHeadMode: self.mHMode, movingHeadColor: mHColor, movingHeadColorFrequency: self.mHColorSpeed, movingHeadStrobeFrequency: self.mHStrobe, movingHeadScene: self.mhScene, movingHeadBrightness: self.mHBrightness, positionPreset: nil)
+        let affectedSettings: Set<LightSettings> = Set(LightSettings.allCases)
+        self.previousState = Cue(id: UUID(), color: .red, name: "Previous", type: .definitive, includeLaser: true, laserSettings: affectedSettings, laserColor: laserColor, laserBPMSyncModes: self.laserBPMSyncModes, laserMode: self.laserMode, laserPattern: self.currentLaserPattern, laserIncludedPatterns: [], includeMovingHead: true, movingHeadSettings: affectedSettings, movingHeadMode: self.mHMode, movingHeadColor: mHColor, movingHeadColorFrequency: self.mHColorSpeed, movingHeadStrobeFrequency: self.mHStrobe, movingHeadScene: self.mhScene, movingHeadBrightness: self.mHBrightness, positionPreset: nil)
     }
     
     private func applyCue(_ cue: Cue?) {
@@ -310,29 +311,6 @@ class LaserConfig: ObservableObject {
 
     
     // MARK: - Color control
-    
-//    func setColor(color: String? = nil) {
-//        guard let url = URL(string: "\(self.baseUrl)/set_color") else { return }
-//        var request = URLRequest(url: url)
-//        request.httpMethod = "POST"
-//        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-//        
-//        var colorToSend = color
-//        if getChangeColorTarget() == .laser && color == nil {
-//            colorToSend = self.currentLaserColorName
-//        } else if getChangeColorTarget() == .movingHead && color == nil {
-//            colorToSend = self.currentMHColorName
-//        } else if getChangeColorTarget() == .both && color == nil {
-//            colorToSend = self.currentLaserColorName
-//        } else if getChangeColorTarget() == .none {
-//            return
-//        }
-//        
-//        let body = ["color": colorToSend]
-//        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-//
-//        URLSession.shared.dataTask(with: request).resume()
-//    }
     
     func changeColor(light: Light, color: Color) {
         guard let url = URL(string: "\(self.baseUrl)/set_color_for/\(light.rawValue)") else { return }

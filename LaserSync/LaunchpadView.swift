@@ -31,14 +31,24 @@ struct LaunchpadView: View {
                                         .padding(.horizontal, 2)
                                 }
                             }
-                            .onLongPressGesture(minimumDuration: 0.2) {
-                                cuePressed = true
-                                laserConfig.setCue(cue)
+                            .onLongPressGesture(minimumDuration: 0.1) {
+                                if cue.type == .temporary {
+                                    print("Pressed")
+                                    hapticFeedback()
+                                    cuePressed = true
+                                    laserConfig.setCue(cue)
+                                }
                             } onPressingChanged: { isPressing in
                                 if !isPressing && cue.type == .temporary && cuePressed {
                                     print("Temp cue stopped")
                                     cuePressed = false
                                     laserConfig.stopCue()
+                                }
+                            }
+                            .onTapGesture {
+                                if cue.type == .definitive {
+                                    hapticFeedback()
+                                    laserConfig.setCue(cue)
                                 }
                             }
                     } else {
@@ -63,6 +73,11 @@ struct LaunchpadView: View {
         .onAppear {
             cues = Cue.loadCues()
         }
+    }
+    
+    private func hapticFeedback() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
     }
 }
 

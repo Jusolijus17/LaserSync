@@ -86,3 +86,19 @@ extension Color {
         }
     }
 }
+
+struct DisabledStyle: ViewModifier {
+    let isDisabled: Bool
+
+    func body(content: Content) -> some View {
+        content
+            .disabled(isDisabled) // Désactive la vue
+            .opacity(isDisabled ? 0.5 : 1.0) // Change l'opacité pour donner un effet visuel
+    }
+}
+
+extension View {
+    func disabledStyle(_ isDisabled: Bool) -> some View {
+        self.modifier(DisabledStyle(isDisabled: isDisabled))
+    }
+}

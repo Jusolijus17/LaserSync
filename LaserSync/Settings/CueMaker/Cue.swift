@@ -15,6 +15,7 @@ struct Cue: Identifiable, Codable {
 
     // Laser
     var includeLaser: Bool = false
+    var laserSettings: Set<LightSettings> = []
     var laserColor: LaserColor = .red
     var laserBPMSyncModes: [BPMSyncMode] = []
     var laserMode: LaserMode = .blackout
@@ -23,6 +24,7 @@ struct Cue: Identifiable, Codable {
 
     // Moving Head
     var includeMovingHead: Bool = false
+    var movingHeadSettings: Set<LightSettings> = []
     var movingHeadMode: MovingHeadMode = .blackout
     var movingHeadColor: MovingHeadColor = .red
     var movingHeadColorFrequency: Double = 0
@@ -30,6 +32,22 @@ struct Cue: Identifiable, Codable {
     var movingHeadScene: MovingHeadScene = .off
     var movingHeadBrightness: Double = 50
     var positionPreset: GyroPreset? = nil
+}
+
+enum LightSettings: String, Codable, CaseIterable {
+    case mode
+    case color
+    
+    // Moving Head
+    case scene
+    case position
+    case strobe
+    case brightness
+    
+    // Laser
+    case colorBpmSync
+    case pattern
+    case patternBpmSync
 }
 
 extension Cue {
