@@ -35,14 +35,6 @@ enum CueType: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-enum MovingHeadMode: String, Codable, CaseIterable, Identifiable {
-    case auto
-    case manual
-    case blackout
-    
-    var id: String { return self.rawValue }
-}
-
 enum MovingHeadScene: String, Codable, CaseIterable, Identifiable {
     case slow
     case medium
@@ -119,7 +111,7 @@ enum BPMSyncMode: String, Codable {
     case pattern
 }
 
-enum LaserMode: String, Codable, CaseIterable, Identifiable {
+enum LightMode: String, Codable, CaseIterable, Identifiable {
     case manual
     case auto
     case sound

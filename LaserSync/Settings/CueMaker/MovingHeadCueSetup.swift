@@ -21,8 +21,8 @@ struct MovingHeadCueSetup: View {
                         .padding(.bottom)
                     
                     // Mode
-                    HStack {
-                        ForEach(MovingHeadMode.allCases.reversed()) { mode in
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
+                        ForEach(LightMode.allCases) { mode in
                             Button(action: {
                                 cue.movingHeadMode = mode
                             }) {
@@ -147,12 +147,27 @@ struct MovingHeadCueSetup: View {
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.strobe))
                         
-                        // Light Intensity
+                        // Brightness
                         SettingToggle(settings: $cue.movingHeadSettings, setting: .brightness, label: "Set Brightness")
                         
                         CustomSliderView(sliderValue: $cue.movingHeadBrightness, title: "Brightness")
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
+                            .disabledStyle(cue.movingHeadBreathe)
+                        
+                        Button {
+                            cue.movingHeadBreathe.toggle()
+                        } label: {
+                            Label("Breathe", systemImage: "wave.3.up")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(cue.movingHeadBreathe ? Color.yellow : Color.gray)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .padding(.bottom)
+                        .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
                     }
                     .disabledStyle(cue.movingHeadMode != .manual)
                 }
@@ -196,19 +211,6 @@ struct MovingHeadCueSetup: View {
         } else {
             cue.laserIncludedPatterns.insert(pattern)
         }
-    }
-    
-    private func makeBPMSyncBinding(for mode: BPMSyncMode) -> Binding<Bool> {
-        Binding<Bool>(
-            get: { cue.laserBPMSyncModes.contains(mode) },
-            set: { newValue in
-                if newValue {
-                    cue.laserBPMSyncModes.append(mode)
-                } else {
-                    cue.laserBPMSyncModes.removeAll { $0 == mode }
-                }
-            }
-        )
     }
 }
 

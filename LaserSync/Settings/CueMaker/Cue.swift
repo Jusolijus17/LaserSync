@@ -17,21 +17,22 @@ struct Cue: Identifiable, Codable {
     var includeLaser: Bool = false
     var laserSettings: Set<LightSettings> = []
     var laserColor: LaserColor = .red
-    var laserBPMSyncModes: [BPMSyncMode] = []
-    var laserMode: LaserMode = .blackout
+    var laserBPMSyncModes: Set<BPMSyncMode> = []
+    var laserMode: LightMode = .blackout
     var laserPattern: LaserPattern = .straight
     var laserIncludedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
 
     // Moving Head
     var includeMovingHead: Bool = false
     var movingHeadSettings: Set<LightSettings> = []
-    var movingHeadMode: MovingHeadMode = .blackout
+    var movingHeadMode: LightMode = .blackout
     var movingHeadColor: MovingHeadColor = .red
     var movingHeadColorFrequency: Double = 0
     var movingHeadStrobeFrequency: Double = 0
     var movingHeadScene: MovingHeadScene = .off
     var movingHeadBrightness: Double = 50
-    var positionPreset: GyroPreset? = nil
+    var movingHeadBreathe: Bool = false
+    var positionPreset: GyroPreset?
 }
 
 enum LightSettings: String, Codable, CaseIterable {

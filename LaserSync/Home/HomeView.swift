@@ -59,157 +59,7 @@ struct HomeView: View {
         }
     }
     
-    var movingHeadControlGrid: some View {
-        VStack(spacing: 20) {
-            Text("Moving Head")
-                .foregroundStyle(.white)
-                .font(.title2)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 2)
-                .background {
-                    RoundedRectangle(cornerRadius: 15)
-                        .fill(.cyan)
-                }
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
-                
-                // Color
-                Button(action: {
-                    hapticFeedback()
-                    homeController.changeMHColor()
-                }) {
-                    Rectangle()
-                        .fill(laserConfig.mHColor)
-                        .frame(height: 150)
-                        .background {
-                            if laserConfig.mHColor == .clear {
-                                RoundedRectangle(cornerRadius: 10)
-                                    .multicolor()
-                            }
-                        }
-                        .overlay(content: {
-                            ZStack {
-                                Text(laserConfig.mHColor.name?.capitalized ?? "Auto")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(laserConfig.mHColor == .white ? .black : .white)
-                                VStack {
-                                    Spacer()
-                                    Text("Color")
-                                        .font(.title3)
-                                        .fontWeight(.semibold)
-                                        .foregroundStyle(.white.opacity(0.5))
-                                }
-                                .padding()
-                            }
-                        })
-                        .cornerRadius(10)
-                }
-                
-                // Manual Strobe
-                Rectangle()
-                    .fill(homeController.isPressed ? .white : .gray)
-                    .frame(height: 150)
-                    .overlay(content: {
-                        ZStack {
-                            Image(systemName: "exclamationmark.warninglight")
-                                .font(.largeTitle)
-                                .foregroundStyle(.white)
-                            VStack {
-                                Spacer()
-                                Text("Strobe")
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .foregroundStyle(.white.opacity(0.5))
-                                    .padding()
-                            }
-                        }
-                    })
-                    .cornerRadius(10)
-                    .onLongPressGesture(minimumDuration: 0.1) {
-                        hapticFeedback()
-                        print("Started")
-                        laserConfig.startMHStrobe()
-                        homeController.timer = Timer.scheduledTimer(withTimeInterval: 0.1, repeats: true) { _ in
-                            homeController.isPressed.toggle()
-                        }
-                    } onPressingChanged: { isPressing in
-                        if !isPressing && homeController.timer != nil {
-                            homeController.touchDownTime = nil
-                            print("Ended")
-                            laserConfig.stopMHStrobe()
-                            homeController.timer?.invalidate()
-                            homeController.timer = nil
-                            homeController.isPressed = false
-                        }
-                    }
-                
-                // Mode
-                SquareButton(title: "Mode", action: {
-                    laserConfig.toggleMHMode()
-                }, backgroundColor: {
-                    if laserConfig.mHMode == .blackout {
-                        return Color.gray
-                    } else if laserConfig.mHMode == .auto {
-                        return Color.green
-                    } else {
-                        return Color.yellow
-                    }
-                }()) {
-                    AnyView(
-                        Text(laserConfig.mHMode.rawValue.capitalized)
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                    )
-                }
-                .onLongPressGesture {
-                    hapticFeedback()
-                    laserConfig.toggleMHMode(.blackout)
-                    laserConfig.toggleMHScene(.off)
-                    laserConfig.mHBrightness = 0
-                }
-                
-                // Scene
-                SquareButton(title: "Scene", action: {
-                    laserConfig.toggleMHScene()
-                }, backgroundColor: {
-                    if laserConfig.mhScene == .slow {
-                        return .blue
-                    } else if laserConfig.mhScene == .medium {
-                        return .orange
-                    } else if laserConfig.mhScene == .fast {
-                        return .red
-                    }
-                    return .gray
-                }()) {
-                    AnyView(
-                        Text(laserConfig.mhScene.rawValue.capitalized)
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                    )
-                }
-                .onLongPressGesture {
-                    hapticFeedback()
-                    laserConfig.toggleMHScene(.off)
-                }
-            }
-            
-            CustomSliderView(sliderValue: $laserConfig.mHBrightness, title: "Brightness", onValueChange: { newValue in
-                if newValue > 0 {
-                    laserConfig.mHMode = .manual
-                } else {
-                    laserConfig.mHMode = .blackout
-                }
-                laserConfig.setMHBrightness()
-            })
-            
-            CustomSliderView(sliderValue: $laserConfig.mHStrobe, title: "Strobe", onValueChange: { _ in
-                laserConfig.setMHStrobe()
-            })
-        }
-        .padding(.horizontal, 20)
-    }
+    // MARK: -Laser Page
     
     var laserControlGrid: some View {
         VStack(spacing: 20) {
@@ -270,7 +120,14 @@ struct HomeView: View {
                 // Mode
                 SquareButton(title: "Mode", action: {
                     homeController.toggleLaserMode()
-                }, backgroundColor: laserConfig.laserMode == .manual ? Color.green : Color.gray) {
+                }, backgroundColor: {
+                    if laserConfig.laserMode == .manual {
+                        return Color.yellow
+                    } else if laserConfig.laserMode != .blackout {
+                        return Color.green
+                    }
+                    return Color.gray
+                }()) {
                     AnyView(
                         Text(laserConfig.laserMode.rawValue.capitalized)
                             .font(.title2)
@@ -376,6 +233,140 @@ struct HomeView: View {
             }
             .padding(.horizontal, 20)
         }
+    }
+    
+    // MARK: - Moving Head Page
+    
+    @State private var isAnimatingBreathe = false
+    var movingHeadControlGrid: some View {
+        VStack(spacing: 20) {
+            Text("Moving Head")
+                .foregroundStyle(.white)
+                .font(.title2)
+                .padding(.horizontal, 10)
+                .padding(.vertical, 2)
+                .background {
+                    RoundedRectangle(cornerRadius: 15)
+                        .fill(.cyan)
+                }
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
+                
+                // Color
+                Button(action: {
+                    hapticFeedback()
+                    homeController.changeMHColor()
+                }) {
+                    Rectangle()
+                        .fill(laserConfig.mHColor)
+                        .frame(height: 150)
+                        .background {
+                            if laserConfig.mHColor == .clear {
+                                RoundedRectangle(cornerRadius: 10)
+                                    .multicolor()
+                            }
+                        }
+                        .overlay(content: {
+                            ZStack {
+                                Text(laserConfig.mHColor.name?.capitalized ?? "Auto")
+                                    .font(.title2)
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(laserConfig.mHColor == .white ? .black : .white)
+                                VStack {
+                                    Spacer()
+                                    Text("Color")
+                                        .font(.title3)
+                                        .fontWeight(.semibold)
+                                        .foregroundStyle(.white.opacity(0.5))
+                                }
+                                .padding()
+                            }
+                        })
+                        .cornerRadius(10)
+                }
+                   
+                SquareButton(title: "Breathe", action: {
+                    print("Touch")
+                    laserConfig.toggleMhBreathe()
+                }, backgroundColor: (isAnimatingBreathe ? Color.yellow : Color.gray), content: {
+                    AnyView(
+                        Image(systemName: "wave.3.up")
+                            .font(.largeTitle)
+                    )
+                })
+                .animation(Animation.linear(duration: 0.7).repeat(while: isAnimatingBreathe))
+                .onChange(of: laserConfig.mHBreathe) { _, newValue in
+                    print(newValue)
+                    self.isAnimatingBreathe = newValue
+                }
+                
+                // Mode
+                SquareButton(title: "Mode", action: {
+                    laserConfig.toggleMHMode()
+                }, backgroundColor: {
+                    if laserConfig.mHMode == .blackout {
+                        return Color.gray
+                    } else if laserConfig.mHMode == .sound {
+                        return Color.green
+                    } else {
+                        return Color.yellow
+                    }
+                }()) {
+                    AnyView(
+                        Text(laserConfig.mHMode.rawValue.capitalized)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
+                }
+                .onLongPressGesture {
+                    hapticFeedback()
+                    laserConfig.toggleMHMode(.blackout)
+                    laserConfig.toggleMHScene(.off)
+                    laserConfig.mHBreathe = false
+                    laserConfig.mHBrightness = 0
+                }
+                
+                // Scene
+                SquareButton(title: "Scene", action: {
+                    laserConfig.toggleMHScene()
+                }, backgroundColor: {
+                    if laserConfig.mhScene == .slow {
+                        return .blue
+                    } else if laserConfig.mhScene == .medium {
+                        return .orange
+                    } else if laserConfig.mhScene == .fast {
+                        return .red
+                    }
+                    return .gray
+                }()) {
+                    AnyView(
+                        Text(laserConfig.mhScene.rawValue.capitalized)
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    )
+                }
+                .onLongPressGesture {
+                    hapticFeedback()
+                    laserConfig.toggleMHScene(.off)
+                }
+            }
+            
+            CustomSliderView(sliderValue: $laserConfig.mHBrightness, title: "Brightness", onValueChange: { newValue in
+                if newValue > 0 {
+                    laserConfig.mHMode = .manual
+                } else {
+                    laserConfig.mHMode = .blackout
+                    laserConfig.mHBreathe = false
+                }
+                laserConfig.setMHBrightness()
+            })
+            
+            CustomSliderView(sliderValue: $laserConfig.mHStrobe, title: "Strobe", onValueChange: { _ in
+                laserConfig.setMHStrobe()
+            })
+        }
+        .padding(.horizontal, 20)
     }
     
     func hapticFeedback() {

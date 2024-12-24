@@ -14,7 +14,7 @@ struct ColorSelectionView: View {
     var body: some View {
         TabView(selection: $selectedTab) {
             VStack {
-                ColorGridImage(light: .laser)
+                LightImage(light: .laser)
                 ColorGridView(
                     colors: laserColors(),
                     masterColor: $laserConfig.bothColor,
@@ -27,7 +27,7 @@ struct ColorSelectionView: View {
             .tag(0)
 
             VStack {
-                ColorGridImage(light: .both)
+                LightImage(light: .both)
                 ColorGridView(
                     colors: laserColors(),
                     masterColor: $laserConfig.bothColor,
@@ -38,7 +38,7 @@ struct ColorSelectionView: View {
             .tag(1)
 
             VStack {
-                ColorGridImage(light: .movingHead, width: 50, height: 50)
+                LightImage(light: .movingHead, width: 50, height: 50)
                 ColorGridView(
                     colors: movingHeadColor(),
                     masterColor: $laserConfig.bothColor,
@@ -50,6 +50,7 @@ struct ColorSelectionView: View {
                 })
                 .padding(.horizontal, 20)
                 .padding(.top, 10)
+                .padding(.bottom)
             }
             .tag(2)
         }
@@ -125,11 +126,22 @@ struct ColorGridView: View {
     }
 }
 
-struct ColorGridImage: View {
+struct LightImage: View {
     var light: Light
-    var width: CGFloat = 100
-    var height: CGFloat = 100
+    var width: CGFloat
+    var height: CGFloat
+    var selectable: Bool = false
     
+    @State private var selectedLights: Set<Light> = [] // État des lumières sélectionnées
+    private var onSelectionChange: ((Set<Light>) -> Void)?
+    
+    init(light: Light, width: CGFloat = 100, height: CGFloat = 100, selectable: Bool = false) {
+        self.light = light
+        self.width = width
+        self.height = height
+        self.selectable = selectable
+    }
+
     var body: some View {
         HStack {
             Group {
@@ -137,21 +149,45 @@ struct ColorGridImage: View {
                     Image("laser_icon")
                         .resizable()
                         .scaledToFit()
+                        .frame(width: width, height: height)
+                        .padding()
+                        .background {
+                            RoundedRectangle(cornerRadius: 20)
+                                .fill(selectedLights.contains(.laser) ? Color.gray.opacity(0.7) : Color.clear)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 20)
+                                        .stroke(Color.gray.opacity(0.7), lineWidth: 3)
+                                )
+                        }
+                        .onTapGesture {
+                            if selectable {
+                                toggleSelectionFor(.laser)
+                            }
+                        }
                 }
                 Image(getLightImage())
                     .resizable()
                     .scaledToFit()
-            }
-            .frame(width: width, height: height)
-            .padding()
-            .background {
-                RoundedRectangle(cornerRadius: 20)
-                    .stroke(.gray.opacity(0.7), lineWidth: 3)
+                    .frame(width: width, height: height)
+                    .padding()
+                    .background {
+                        RoundedRectangle(cornerRadius: 20)
+                            .fill(selectedLights.contains(.movingHead) ? Color.gray.opacity(0.7) : Color.clear)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 20)
+                                    .stroke(Color.gray.opacity(0.7), lineWidth: 3)
+                            )
+                    }
+                    .onTapGesture {
+                        if selectable {
+                            toggleSelectionFor(.movingHead)
+                        }
+                    }
             }
         }
         .padding(.bottom)
     }
-    
+
     private func getLightImage() -> String {
         switch light {
         case .both: return "moving_head_icon"
@@ -159,6 +195,23 @@ struct ColorGridImage: View {
         case .movingHead: return "moving_head_icon"
         default: return ""
         }
+    }
+
+    private func toggleSelectionFor(_ light: Light) {
+        if selectedLights.contains(light) {
+            selectedLights.remove(light)
+        } else {
+            selectedLights.insert(light)
+        }
+        onSelectionChange?(selectedLights)
+    }
+}
+
+extension LightImage {
+    func onSelectionChange(_ onChange: @escaping (Set<Light>) -> Void) -> some View {
+        var copy = self
+        copy.onSelectionChange = onChange
+        return copy
     }
 }
 
@@ -185,7 +238,6 @@ struct LaserColorOptions: View {
                         }
                     })
             }
-            .padding(.bottom)
             
             Button(action: {
                 hapticFeedback()

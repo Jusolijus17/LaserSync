@@ -90,7 +90,7 @@ class HomeController: ObservableObject {
     func toggleLaserMode() {
         guard let laserConfig else { return }
         laserConfig.laserMode = laserConfig.laserMode == .manual ? .blackout : .manual
-        laserConfig.setMode()
+        laserConfig.setModeFor(.laser)
     }
     
     func startHorizontalBlinking() {

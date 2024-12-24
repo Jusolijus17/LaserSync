@@ -9,14 +9,12 @@ import SwiftUI
 
 class LaserConfig: ObservableObject {
     // Laser vars
-    //@Published var currentLaserColorIndex: Int = 0 // to dispatch
     @Published var laserColor: Color = .clear
     @Published var currentLaserPattern: LaserPattern = .straight
-    @Published var laserMode: LaserMode = .auto
+    @Published var laserMode: LightMode = .auto
     @Published var currentBpm: Int = 0
     @Published var bpmMultiplier: Double = 1.0
-    @Published var strobeModeEnabled: Bool = false
-    @Published var laserBPMSyncModes: [BPMSyncMode] = []
+    @Published var laserBPMSyncModes: Set<BPMSyncMode> = []
     @Published var laserIncludedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
     @Published var verticalAdjust: Double = 63
     @Published var horizontalAnimationEnabled: Bool = false
@@ -25,18 +23,18 @@ class LaserConfig: ObservableObject {
     @Published var verticalAnimationSpeed: Double = 127
     
     // Moving Head vars
-    //@Published var currentMHColorIndex: Int = 0 // to disptach
     @Published var mHColor: Color = .red
-    @Published var mHMode: MovingHeadMode = .blackout
+    @Published var mHMode: LightMode = .blackout
     @Published var mhScene: MovingHeadScene = .off
     @Published var mHBrightness: Double = 0
+    @Published var mHBreathe: Bool = false
     @Published var mHStrobe: Double = 0
     @Published var mHColorSpeed: Double = 0
     @Published var positionPreset: GyroPreset? = nil
     
     // Both
-    @Published var lightControlColor = Set<Light>()
     @Published var bothColor: Color = .red
+    @Published var includedLightsStrobe: Set<Light> = []
     private var previousState: Cue?
     
     // Connection settings
@@ -48,7 +46,6 @@ class LaserConfig: ObservableObject {
     // Other
     private var bpmSyncTimer: Timer?
     private var bpmUpdateTimer: Timer?
-    private var pauseRequests: Bool = false
     private var isRequestInProgress: Bool = false
     @Published var networkErrorCount: Int = 0
     @Published var successfullBpmFetch: Bool = false
@@ -75,6 +72,7 @@ class LaserConfig: ObservableObject {
 //    }
     
     var bpmSyncLaserColorIndex: Int = 0
+    var bpmSyncLaserPatternIndex: Int = 0
     
     var laserColors: [LaserColor] = LaserColor.allCases
     var laserPatterns: [LaserPattern] = LaserPattern.allCases
@@ -263,12 +261,11 @@ class LaserConfig: ObservableObject {
         let laserColor = LaserColor.from(color: self.laserColor) ?? .multicolor
         let mHColor = MovingHeadColor.from(color: self.mHColor) ?? .red
         let affectedSettings: Set<LightSettings> = Set(LightSettings.allCases)
-        self.previousState = Cue(id: UUID(), color: .red, name: "Previous", type: .definitive, includeLaser: true, laserSettings: affectedSettings, laserColor: laserColor, laserBPMSyncModes: self.laserBPMSyncModes, laserMode: self.laserMode, laserPattern: self.currentLaserPattern, laserIncludedPatterns: [], includeMovingHead: true, movingHeadSettings: affectedSettings, movingHeadMode: self.mHMode, movingHeadColor: mHColor, movingHeadColorFrequency: self.mHColorSpeed, movingHeadStrobeFrequency: self.mHStrobe, movingHeadScene: self.mhScene, movingHeadBrightness: self.mHBrightness, positionPreset: nil)
+        self.previousState = Cue(id: UUID(), color: .red, name: "Previous", type: .definitive, includeLaser: true, laserSettings: affectedSettings, laserColor: laserColor, laserBPMSyncModes: self.laserBPMSyncModes, laserMode: self.laserMode, laserPattern: self.currentLaserPattern, laserIncludedPatterns: [], includeMovingHead: true, movingHeadSettings: affectedSettings, movingHeadMode: self.mHMode, movingHeadColor: mHColor, movingHeadColorFrequency: self.mHColorSpeed, movingHeadStrobeFrequency: self.mHStrobe, movingHeadScene: self.mhScene, movingHeadBrightness: self.mHBrightness)
     }
     
     private func applyCue(_ cue: Cue?) {
         guard let cue else { return }
-        self.pauseRequests = true
         if cue.includeLaser {
             self.currentLaserPattern = cue.laserPattern
             self.laserMode = cue.laserMode
@@ -285,28 +282,6 @@ class LaserConfig: ObservableObject {
             self.mHBrightness = cue.movingHeadBrightness
             self.positionPreset = cue.positionPreset
         }
-        self.pauseRequests = false
-    }
-    
-    // MARK: - Lights settings
-    
-    private func setIncludedLightsForColor() {
-        guard let url = URL(string: "\(self.baseUrl)/set_lights_include_color") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        let body: [String: Set<Light>] = ["lights": self.lightControlColor]
-        print("Body to send : \(body)" )
-        
-        do {
-            request.httpBody = try JSONEncoder().encode(body)
-        } catch {
-            print("Failed to encode body: \(error)")
-            return
-        }
-        
-        URLSession.shared.dataTask(with: request).resume()
     }
 
     
@@ -318,7 +293,6 @@ class LaserConfig: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        self.pauseRequests = true
         switch light {
         case .laser:
             self.laserColor = color
@@ -331,7 +305,6 @@ class LaserConfig: ObservableObject {
             self.mHColor = color
         default: break
         }
-        self.pauseRequests = false
         
         var body = ["color": color.name]
         if light == .laser && color == .clear {
@@ -342,19 +315,7 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func getChangeColorTarget() -> Light {
-        if lightControlColor.count == 1 && lightControlColor.contains(.laser) {
-            return .laser
-        } else if lightControlColor.count == 1 && lightControlColor.contains(.movingHead) {
-            return .movingHead
-        } else if lightControlColor.count == 2 {
-            return .both
-        }
-        return .none
-    }
-    
     func setMHColorSpeed() {
-        guard !pauseRequests else { return }
         guard let url = URL(string: "\(self.baseUrl)/set_mh_color_speed") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -400,17 +361,17 @@ class LaserConfig: ObservableObject {
     
     // MARK: - Mode control
     
-    func toggleMHMode(_ custom: MovingHeadMode? = nil) {
+    func toggleMHMode(_ custom: LightMode? = nil) {
         if let custom {
             mHMode = custom
         } else {
-            if mHMode == .auto {
-                mHMode = .manual
+            if mHMode == .manual {
+                mHMode = .sound
             } else {
-                mHMode = .auto
+                mHMode = .manual
             }
         }
-        setMHMode()
+        setModeFor(.movingHead)
     }
     
     func toggleMHScene(_ custom: MovingHeadScene? = nil) {
@@ -431,39 +392,40 @@ class LaserConfig: ObservableObject {
         setMHScene()
     }
     
-    func setMode() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mode") else { return }
+    func setModeFor(_ light: Light) {
+        guard let url = URL(string: "\(self.baseUrl)/set_mode_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["mode": self.laserMode.rawValue]
+        var mode: String = ""
+        if light == .laser {
+            mode = self.laserMode.rawValue
+        } else if light == .movingHead {
+            mode = self.mHMode.rawValue
+        } else {
+            return
+        }
+        let body = ["mode": mode]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func toggleStrobeMode() {
-        self.strobeModeEnabled.toggle()
-        setStrobeMode()
+    func toggleStrobeModeFor(_ light: Light) {
+        if self.includedLightsStrobe.contains(light) {
+            self.includedLightsStrobe.remove(light)
+        } else {
+            self.includedLightsStrobe.insert(light)
+        }
+        setStrobeModeFor(light)
     }
     
-    func setStrobeMode() {
-        guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode") else { return }
+    func setStrobeModeFor(_ light: Light) {
+        guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["enabled": self.strobeModeEnabled]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    private func setMHMode() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_mode") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: String] = ["mode": self.mHMode.rawValue]
+        let body = ["enabled": self.includedLightsStrobe.contains(light)]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -480,35 +442,7 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func sendSingleStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/send_single_strobe") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func startMHStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/start_mh_strobe") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func stopMHStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/stop_mh_strobe") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
     func setMHStrobe() {
-        guard !pauseRequests else { return }
         guard let url = URL(string: "\(self.baseUrl)/set_mh_strobe") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
@@ -519,14 +453,26 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    // MARK: - Brightness control
+    // MARK: - MH Brightness control
+    
     func setMHBrightness() {
-        guard !pauseRequests else { return }
         guard let url = URL(string: "\(self.baseUrl)/set_mh_brightness") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let body: [String: Int] = ["value": Int(self.mHBrightness)]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func toggleMhBreathe() {
+        self.mHBreathe.toggle()
+        guard let url = URL(string: "\(self.baseUrl)/set_mh_breathe") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Bool] = ["breathe": self.mHBreathe]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -581,12 +527,12 @@ class LaserConfig: ObservableObject {
     
     func toggleBpmSync(mode: BPMSyncMode) {
         if laserBPMSyncModes.contains(mode) {
-            laserBPMSyncModes.removeAll { $0 == mode }
+            laserBPMSyncModes.remove(mode)
             if laserBPMSyncModes.isEmpty {
                 stopBpmSyncTimer()
             }
         } else {
-            laserBPMSyncModes.append(mode)
+            laserBPMSyncModes.insert(mode)
             startBpmSyncTimer()
         }
         setSyncMode()
@@ -596,7 +542,8 @@ class LaserConfig: ObservableObject {
         stopBpmSyncTimer()
         bpmSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) * bpmMultiplier, repeats: true) { _ in
             if self.laserBPMSyncModes.contains(.pattern) {
-                self.currentLaserPattern = LaserPattern.allCases.randomElement()!
+                self.bpmSyncLaserPatternIndex = (self.bpmSyncLaserPatternIndex + 1) % self.laserPatterns.count
+                self.currentLaserPattern = self.laserPatterns[self.bpmSyncLaserPatternIndex]
             }
             if self.laserBPMSyncModes.contains(.color) {
                 self.bpmSyncLaserColorIndex = (self.bpmSyncLaserColorIndex + 1) % self.laserColors.count
