@@ -19,7 +19,7 @@ struct LaserCueSetup: View {
                         .font(.title2)
                         .padding(.bottom)
                     
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                         ForEach(LightMode.allCases) { mode in
                             Button(action: {
                                 cue.laserMode = mode
@@ -96,7 +96,7 @@ struct LaserCueSetup: View {
                         // Pattern
                         SettingToggle(settings: $cue.laserSettings, setting: .pattern, label: "Set Pattern")
                         
-                        LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
+                        LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                             ForEach(LaserPattern.allCases) { laserPattern in
                                 Button(action: {
                                     if cue.laserBPMSyncModes.contains(.pattern) {
@@ -173,7 +173,7 @@ struct LaserCueSetup: View {
     }
     
     func togglePatternInclusion(_ pattern: LaserPattern) {
-        if cue.laserIncludedPatterns.contains(pattern) && cue.laserIncludedPatterns.count > 1 {
+        if cue.laserIncludedPatterns.contains(pattern) && cue.laserIncludedPatterns.count > 2 {
             cue.laserIncludedPatterns.remove(pattern)
         } else {
             cue.laserIncludedPatterns.insert(pattern)

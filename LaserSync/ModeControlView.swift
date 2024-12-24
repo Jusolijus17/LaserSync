@@ -44,15 +44,15 @@ struct ModeControlView: View {
             }
             .padding(.horizontal, 20)
             
+            // Strobe mode
             Button(action: {
                 hapticFeedback()
-                laserConfig.toggleStrobeModeFor(.laser)
-                laserConfig.toggleStrobeModeFor(.movingHead)
+                toggleStrobeMode()
             }) {
                 Text("Strobe")
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(!laserConfig.includedLightsStrobe.isEmpty ? Color.yellow : Color.gray)
+                    .background(isStrobeActive() ? Color.yellow : Color.gray)
                     .foregroundColor(.black)
                     .cornerRadius(10)
                     .shadow(radius: 5)
@@ -73,6 +73,18 @@ struct ModeControlView: View {
         }
     }
     
+    func toggleStrobeMode() {
+        // Ajoute ou retire les lumières sélectionnées du mode strobe
+        for light in selectedLights {
+            if laserConfig.includedLightsStrobe.contains(light) {
+                laserConfig.includedLightsStrobe.remove(light)
+            } else {
+                laserConfig.includedLightsStrobe.insert(light)
+            }
+        }
+        laserConfig.setStrobeMode()
+    }
+    
     private func isModeEnabled(mode: LightMode) -> Bool {
         if selectedLights.contains(.movingHead) && selectedLights.contains(.laser) {
             if laserConfig.laserMode == laserConfig.mHMode {
@@ -86,6 +98,10 @@ struct ModeControlView: View {
             return laserConfig.mHMode == mode
         }
         return false
+    }
+    
+    private func isStrobeActive() -> Bool {
+        return selectedLights.isSubset(of: laserConfig.includedLightsStrobe) && !selectedLights.isEmpty
     }
     
     func hapticFeedback() {

@@ -21,7 +21,7 @@ struct MovingHeadCueSetup: View {
                         .padding(.bottom)
                     
                     // Mode
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
+                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                         ForEach(LightMode.allCases) { mode in
                             Button(action: {
                                 cue.movingHeadMode = mode

@@ -46,9 +46,7 @@ enum LightSettings: String, Codable, CaseIterable {
     case brightness
     
     // Laser
-    case colorBpmSync
     case pattern
-    case patternBpmSync
 }
 
 extension Cue {

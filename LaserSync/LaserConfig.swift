@@ -210,6 +210,7 @@ class LaserConfig: ObservableObject {
     }
     
     // MARK: - CUE settings
+    
     func setCue(_ cue: Cue) {
         if cue.type == .temporary {
             self.savePreviousState()
@@ -271,6 +272,11 @@ class LaserConfig: ObservableObject {
             self.laserMode = cue.laserMode
             self.laserColor = cue.laserColor.color
             self.laserBPMSyncModes = cue.laserBPMSyncModes
+            if !self.laserBPMSyncModes.isEmpty {
+                self.startBpmSyncTimer()
+            } else {
+                self.stopBpmSyncTimer()
+            }
             self.laserIncludedPatterns = cue.laserIncludedPatterns
         }
         if cue.includeMovingHead {
@@ -349,13 +355,18 @@ class LaserConfig: ObservableObject {
     }
 
     func setPatternInclude() {
-        let patternList = laserPatterns.map { ["name": $0.rawValue, "include": laserIncludedPatterns.contains($0)] }
         guard let url = URL(string: "\(self.baseUrl)/set_pattern_include") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["patterns": patternList]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        let patternsArray = laserIncludedPatterns.map { $0.rawValue }
+        let body: [String: Any] = ["patterns": patternsArray]
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            print("Erreur lors de la sérialisation JSON : \(error)")
+            return
+        }
         URLSession.shared.dataTask(with: request).resume()
     }
     
@@ -411,24 +422,17 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func toggleStrobeModeFor(_ light: Light) {
-        if self.includedLightsStrobe.contains(light) {
-            self.includedLightsStrobe.remove(light)
-        } else {
-            self.includedLightsStrobe.insert(light)
+    func setStrobeMode() {
+        for light in Light.allCases {
+            guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode_for/\(light)") else { return }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let body = ["enabled": self.includedLightsStrobe.contains(light)]
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+            
+            URLSession.shared.dataTask(with: request).resume()
         }
-        setStrobeModeFor(light)
-    }
-    
-    func setStrobeModeFor(_ light: Light) {
-        guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode_for/\(light)") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["enabled": self.includedLightsStrobe.contains(light)]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-        
-        URLSession.shared.dataTask(with: request).resume()
     }
     
     private func setMHScene() {
@@ -540,12 +544,18 @@ class LaserConfig: ObservableObject {
     
     private func startBpmSyncTimer() {
         stopBpmSyncTimer()
+        
+        // Convertir le Set en un tableau ordonné
+        
         bpmSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) * bpmMultiplier, repeats: true) { _ in
+            let orderedLaserPatterns = Array(self.laserIncludedPatterns)
             if self.laserBPMSyncModes.contains(.pattern) {
-                self.bpmSyncLaserPatternIndex = (self.bpmSyncLaserPatternIndex + 1) % self.laserPatterns.count
-                self.currentLaserPattern = self.laserPatterns[self.bpmSyncLaserPatternIndex]
+                // Incrémenter l'index et réinitialiser lorsqu'on atteint la fin
+                self.bpmSyncLaserPatternIndex = (self.bpmSyncLaserPatternIndex + 1) % orderedLaserPatterns.count
+                self.currentLaserPattern = orderedLaserPatterns[self.bpmSyncLaserPatternIndex]
             }
             if self.laserBPMSyncModes.contains(.color) {
+                // Incrémenter l'index des couleurs et réinitialiser lorsqu'on atteint la fin
                 self.bpmSyncLaserColorIndex = (self.bpmSyncLaserColorIndex + 1) % self.laserColors.count
                 self.laserColor = self.laserColors[self.bpmSyncLaserColorIndex].color
             }
