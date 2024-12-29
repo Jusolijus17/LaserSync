@@ -8,26 +8,14 @@
 import SwiftUI
 
 class LaserConfig: ObservableObject {
-    @Published var currentLaserColorIndex: Int = 0
-    @Published var currentMHColorIndex: Int = 0
-    @Published var currentPatternIndex: Int = 0
-    @Published var currentMode: String = "auto"
-    @Published var currentBpm: Int = 0
-    @Published var bpmMultiplier: Double = 1.0
-    @Published var strobeModeEnabled: Bool = false
-    @Published var activeSyncTypes = Set<String>()
-    @Published var includedPatterns: Set<String> = ["pattern1", "pattern2", "pattern3", "pattern4"]
-    @Published var verticalAdjust: Double = 63
-    @Published var horizontalAnimationEnabled: Bool = false
-    @Published var horizontalAnimationSpeed: Double = 127
-    @Published var verticalAnimationEnabled: Bool = false
-    @Published var verticalAnimationSpeed: Double = 127
-    @Published var lightControlColor = Set<Light>()
-    @Published var mHMode: MovingHeadMode = .blackout
-    @Published var mhScene: MovingHeadScene = .off
-    @Published var mHDimmer: Double = 0
-    @Published var mHStrobe: Double = 0
-    @Published var mHColorSpeed: Double = 0
+    @Published var laser = LaserState()
+    @Published var movingHead = MovingHeadState()
+    
+    // Both
+    @Published var bothColor: Color = .red
+    @Published var includedLightsStrobe: Set<Light> = []
+    private var previousLaserState: LaserState?
+    private var previousMovingHeadState: MovingHeadState?
     
     // Connection settings
     @Published var serverIp: String
@@ -36,9 +24,12 @@ class LaserConfig: ObservableObject {
     @Published var olaPort: String
     
     // Other
+    @Published var currentBpm: Int = 0
+    @Published var bpmMultiplier: Double = 1.0
     private var bpmSyncTimer: Timer?
     private var bpmUpdateTimer: Timer?
     private var isRequestInProgress: Bool = false
+    private var bpmUpdateTask: Task<Void, Never>?
     @Published var networkErrorCount: Int = 0
     @Published var successfullBpmFetch: Bool = false
     
@@ -47,56 +38,13 @@ class LaserConfig: ObservableObject {
         "http://\(serverIp):\(serverPort)"
     }
     
-    var currentLaserColor: Color {
-        return laserColors[currentLaserColorIndex].color
-    }
+    var bpmSyncLaserColorIndex: Int = 0
+    var bpmSyncLaserPatternIndex: Int = 0
     
-    var currentMHColor: Color {
-        return mHColors[currentMHColorIndex].color
-    }
+    var laserColors: [LaserColor] = LaserColor.allCases
+    var laserPatterns: [LaserPattern] = LaserPattern.allCases
     
-    var currentLaserColorName: String {
-        return laserColors[currentLaserColorIndex].name
-    }
-    
-    var currentMHColorName: String {
-        return mHColors[currentMHColorIndex].name
-    }
-    
-    var currentPattern: Pattern {
-        return patterns[currentPatternIndex]
-    }
-    
-    var patterns: [Pattern] = [
-        Pattern(name: "pattern1", shape: AnyView(StraightLineShape())),
-        Pattern(name: "pattern2", shape: AnyView(DashedLineShape())),
-        Pattern(name: "pattern3", shape: AnyView(DottedLineShape())),
-        Pattern(name: "pattern4", shape: AnyView(WaveLineShape()))
-    ]
-    
-    var laserColors: [(name: String, color: Color)] = [
-        ("multicolor", .clear),
-        ("red", .red),
-        ("blue", .blue),
-        ("green", .green),
-        ("pink", .pink),
-        ("cyan", .cyan),
-        ("yellow", .yellow)
-    ]
-    
-    var mHColors: [(name: String, color: Color)] = [
-        ("auto", .clear),
-        ("red", .red),
-        ("blue", .blue),
-        ("green", .green),
-        ("pink", .pink),
-        ("cyan", .cyan),
-        ("yellow", .yellow),
-        ("orange", .orange),
-        ("white", .white)
-    ]
-    
-    var modes = ["auto", "manual", "sound", "blackout"]
+    var mHColors: [MovingHeadColor] = MovingHeadColor.allCases
     
     init() {
         self.serverIp = UserDefaults.standard.string(forKey: "serverIp") ?? ""
@@ -141,163 +89,207 @@ class LaserConfig: ObservableObject {
     // MARK: - Home
     
     func startBpmUpdate() {
-        bpmUpdateTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { _ in
-            if !self.isRequestInProgress {
-                self.isRequestInProgress = true
-                self.getCurrentBpm() { _, networkError in
-                    self.isRequestInProgress = false
-                    if networkError {
-                        self.successfullBpmFetch = false
-                        self.networkErrorCount += 1
-                        if self.networkErrorCount >= 3 {
-                            self.stopBpmUpdate()
-                        }
-                    } else {
-                        self.successfullBpmFetch = true
-                        self.networkErrorCount = 0
-                    }
-                }
-            }
+        bpmUpdateTask?.cancel() // Annule toute tâche existante
+        bpmUpdateTask = Task {
+            await updateBpmContinuously()
         }
+    }
+    
+    func stopBpmUpdate() {
+        bpmUpdateTask?.cancel()
+        bpmUpdateTask = nil
     }
     
     func restartBpmUpdate() {
-        self.networkErrorCount = 0
-        self.currentBpm = 0
-        self.startBpmUpdate()
+        stopBpmUpdate()
+        networkErrorCount = 0
+        currentBpm = 0
+        startBpmUpdate()
     }
 
-    func stopBpmUpdate() {
-        bpmUpdateTimer?.invalidate()
-        bpmUpdateTimer = nil
-    }
-    
-    func getCurrentBpm(newBpm: @escaping (Bool, Bool) -> Void) {
-        guard let url = URL(string: "\(self.baseUrl)/get_bpm") else {
-            newBpm(false, true)
-            return
-        }
-
-        URLSession.shared.dataTask(with: url) { data, response, error in
-            if let error = error {
-                print("Error fetching BPM: \(error)")
-                DispatchQueue.main.async {
-                    newBpm(false, true) // Pass true to indicate a network error
-                }
-                return
-            }
-
-            guard let data = data else {
-                print("No data received")
-                DispatchQueue.main.async {
-                    newBpm(false, true) // Pass true to indicate a network error
-                }
-                return
-            }
-
-            if let jsonString = String(data: data, encoding: .utf8) {
-                print("Received raw JSON: \(jsonString)")
-            }
-
+    private func updateBpmContinuously() async {
+        while !Task.isCancelled {
             do {
-                if let json = try JSONSerialization.jsonObject(with: data, options: []) as? [String: Double],
-                   let bpm = json["bpm"] {
-                    DispatchQueue.main.async {
-                        let roundedBpm = Int(bpm.rounded())
-                        print("Received BPM from server: \(bpm), rounded to \(roundedBpm)")
-                        if self.currentBpm != roundedBpm {
-                            self.currentBpm = roundedBpm
-                            print("Updated current BPM: \(self.currentBpm)")
-                            newBpm(true, false) // Pass false to indicate no network error
-                        } else {
-                            newBpm(false, false) // Pass false to indicate no network error
-                        }
+                // Appeler le réseau en arrière-plan
+                let bpm = try await fetchCurrentBpm()
+
+                // Mettre à jour l'interface utilisateur sur le thread principal
+                await MainActor.run {
+                    if self.currentBpm != bpm {
+                        self.currentBpm = bpm
+                        self.successfullBpmFetch = true
                     }
-                } else {
-                    print("Failed to parse JSON or no BPM value found")
-                    DispatchQueue.main.async {
-                        newBpm(false, true) // Pass true to indicate a network error
+                    if self.networkErrorCount != 0 {
+                        self.networkErrorCount = 0
                     }
                 }
             } catch {
-                print("JSON parsing error: \(error)")
-                DispatchQueue.main.async {
-                    newBpm(false, true) // Pass true to indicate a network error
+                // Gérer les erreurs sur le thread principal
+                await MainActor.run {
+                    self.networkErrorCount += 1
+                    self.successfullBpmFetch = false
+                    if self.networkErrorCount >= 3 {
+                        self.stopBpmUpdate()
+                    }
                 }
             }
-        }.resume()
+
+            // Attendre 5 secondes avant de refaire une requête
+            try? await Task.sleep(nanoseconds: 5_000_000_000)
+        }
     }
     
-    // MARK: - Lights settings
+    private func fetchCurrentBpm() async throws -> Int {
+        guard let url = URL(string: "\(baseUrl)/get_bpm") else {
+            throw URLError(.badURL)
+        }
+        
+        let (data, response) = try await URLSession.shared.data(from: url)
+        
+        // Vérifier la réponse HTTP
+        guard let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode == 200 else {
+            throw URLError(.badServerResponse)
+        }
+        
+        // Décoder le JSON pour extraire le BPM
+        guard
+            let json = try? JSONSerialization.jsonObject(with: data) as? [String: Double],
+            let bpm = json["bpm"]
+        else {
+            throw URLError(.cannotParseResponse)
+        }
+        
+        return Int(bpm.rounded())
+    }
     
-    // Used to set which lights will change color using the color board
-    func toggleIncludedLightsForColor(light: Light) {
-        if lightControlColor.contains(light) {
-            lightControlColor.remove(light)
+    // MARK: - CUE settings
+    
+    func setCue(_ cue: Cue) {
+        if cue.type == .temporary {
+            self.savePreviousState()
         } else {
-            lightControlColor.insert(light)
+            self.applyCue(cue)
         }
-        if lightControlColor.count == 2 {
-            self.currentMHColorIndex = 1
-            self.currentLaserColorIndex = 1
+        guard let url = URL(string: "\(self.baseUrl)/set_cue") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        do {
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let jsonData = try encoder.encode(cue)
+            request.httpBody = jsonData
+            if let jsonString = String(data: jsonData, encoding: .utf8) {
+                print("JSON to send: \(jsonString)")
+            }
+        } catch {
+            print("Failed to encode Cue: \(error)")
+            return
         }
-        setIncludedLightsForColor()
+        URLSession.shared.dataTask(with: request).resume()
     }
     
-    private func setIncludedLightsForColor() {
-        guard let url = URL(string: "\(self.baseUrl)/set_lights_include_color") else { return }
+    func stopCue() {
+        guard let url = URL(string: "\(self.baseUrl)/set_cue") else { return }
+        self.restorePreviousState()
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        let body: [String: Set<Light>] = ["lights": self.lightControlColor]
-        print("Body to send : \(body)" )
+        // Restore Cue
+        let allSettings = Set(LightSettings.allCases)
+        let previousStateCue = Cue(name: "Restore Cue", affectedLights: [.laser, .movingHead], laser: self.laser, laserSettings: allSettings, movingHead: self.movingHead, movingHeadSettings: allSettings)
         
         do {
-            request.httpBody = try JSONEncoder().encode(body)
+            let encoder = JSONEncoder()
+            encoder.outputFormatting = .prettyPrinted
+            let jsonData = try encoder.encode(previousStateCue)
+            request.httpBody = jsonData
+//            if let jsonString = String(data: jsonData, encoding: .utf8) {
+//                print("JSON to send: \(jsonString)")
+//            }
         } catch {
-            print("Failed to encode body: \(error)")
+            print("Failed to encode Cue: \(error)")
             return
         }
-        
         URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    private func savePreviousState() {
+        self.previousLaserState = self.laser
+        self.previousMovingHeadState = self.movingHead
+    }
+    
+    private func restorePreviousState() {
+        self.laser = self.previousLaserState ?? LaserState()
+        self.movingHead = self.previousMovingHeadState ?? MovingHeadState()
+    }
+    
+    private func applyCue(_ cue: Cue?) {
+        guard let cue else { return }
+
+        // Appliquer les réglages pour le laser
+        if cue.affectedLights.contains(.laser) {
+            self.laser.merge(with: cue.laser, settings: cue.laserSettings)
+            if cue.laserSettings.contains(.pattern) || cue.laserSettings.contains(.color) {
+                if !self.laser.bpmSyncModes.isEmpty {
+                    self.startBpmSyncTimer()
+                } else {
+                    self.stopBpmSyncTimer()
+                }
+            }
+        }
+        
+        print("Laser mode now : ", self.laser.mode)
+
+        // Appliquer les réglages pour le moving head
+        if cue.affectedLights.contains(.movingHead) {
+            self.movingHead.merge(with: cue.movingHead, settings: cue.movingHeadSettings)
+        }
+        
+        print("Moving head mode now : ", self.movingHead.mode)
     }
 
     
     // MARK: - Color control
     
-    func setColor(color: String? = nil) {
+    func changeColor(lights: [Light: Color]) {
         guard let url = URL(string: "\(self.baseUrl)/set_color") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        var colorToSend = color
-        if getChangeColorTarget() == .laser && color == nil {
-            colorToSend = self.currentLaserColorName
-        } else if getChangeColorTarget() == .movingHead && color == nil {
-            colorToSend = self.currentMHColorName
-        } else if getChangeColorTarget() == .both && color == nil {
-            colorToSend = self.currentLaserColorName
-        } else if getChangeColorTarget() == .none {
-            return
+        // Mise à jour locale des couleurs
+        for (light, color) in lights {
+            switch light {
+            case .laser:
+                self.laser.color = LaserColor.from(color: color)
+            case .movingHead:
+                self.movingHead.colorSpeed = 0
+                self.movingHead.color = MovingHeadColor.from(color: color)
+            case .both:
+                self.movingHead.colorSpeed = 0
+                self.laser.color = LaserColor.from(color: color)
+                self.movingHead.color = MovingHeadColor.from(color: color)
+            default:
+                break
+            }
         }
         
-        let body = ["color": colorToSend]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func getChangeColorTarget() -> Light {
-        if lightControlColor.count == 1 && lightControlColor.contains(.laser) {
-            return .laser
-        } else if lightControlColor.count == 1 && lightControlColor.contains(.movingHead) {
-            return .movingHead
-        } else if lightControlColor.count == 2 {
-            return .both
+        // Construction du corps de la requête
+        let body: [[String: String]] = lights.map { light, color in
+            let colorName = (light == .laser && color == .clear) ? "multicolor" : color.name ?? "unknown"
+            return [
+                "light": light.rawValue,
+                "color": colorName
+            ]
         }
-        return .none
+        
+        // Ajout du JSON dans le corps de la requête
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        // Envoi de la requête
+        URLSession.shared.dataTask(with: request).resume()
     }
     
     func setMHColorSpeed() {
@@ -305,7 +297,7 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["speed": Int(self.mHColorSpeed)]
+        let body = ["speed": Int(self.movingHead.colorSpeed)]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -318,101 +310,113 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["pattern": self.currentPattern.name]
+        let body = ["pattern": self.laser.pattern.rawValue]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func togglePatternInclusion(name: String) {
-        if includedPatterns.contains(name) {
-            includedPatterns.remove(name)
+    func togglePatternInclusion(pattern: LaserPattern) {
+        if laser.includedPatterns.contains(pattern) {
+            self.laser.includedPatterns.remove(pattern)
         } else {
-            includedPatterns.insert(name)
+            self.laser.includedPatterns.insert(pattern)
         }
         setPatternInclude()
     }
 
     func setPatternInclude() {
-        let patternList = patterns.map { ["name": $0.name, "include": includedPatterns.contains($0.name)] }
         guard let url = URL(string: "\(self.baseUrl)/set_pattern_include") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["patterns": patternList]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        let patternsArray = self.laser.includedPatterns.map { $0.rawValue }
+        let body: [String: Any] = ["patterns": patternsArray]
+        do {
+            request.httpBody = try JSONSerialization.data(withJSONObject: body, options: [])
+        } catch {
+            print("Erreur lors de la sérialisation JSON : \(error)")
+            return
+        }
         URLSession.shared.dataTask(with: request).resume()
     }
     
     // MARK: - Mode control
     
-    func toggleMHMode(_ custom: MovingHeadMode? = nil) {
+    func toggleMHMode(_ custom: LightMode? = nil) {
         if let custom {
-            mHMode = custom
+            self.movingHead.mode = custom
         } else {
-            if mHMode == .auto {
-                mHMode = .manual
+            if self.movingHead.mode == .manual {
+                self.movingHead.mode = .sound
             } else {
-                mHMode = .auto
+                self.movingHead.mode = .manual
             }
         }
-        setMHMode()
+        setModeFor(.movingHead)
     }
     
     func toggleMHScene(_ custom: MovingHeadScene? = nil) {
         if let custom {
-            self.mhScene = custom
+            self.movingHead.scene = custom
         } else {
-            switch mhScene {
+            switch self.movingHead.scene {
             case .slow:
-                mhScene = .medium
+                self.movingHead.scene = .medium
             case .medium:
-                mhScene = .fast
+                self.movingHead.scene = .fast
             case .fast:
-                mhScene = .off
+                self.movingHead.scene = .off
             case .off:
-                mhScene = .slow
+                self.movingHead.scene = .slow
             }
         }
         setMHScene()
     }
     
-    func setMode() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mode") else { return }
+    func turnOffMovingHead() {
+        self.movingHead.mode = .blackout
+        self.movingHead.scene = .off
+        if self.movingHead.breathe {
+            self.toggleMhBreathe()
+        }
+        self.movingHead.brightness = 0
+        
+        self.setModeFor(.movingHead)
+        self.setMHScene()
+        self.setMHBrightness()
+    }
+    
+    func setModeFor(_ light: Light) {
+        guard let url = URL(string: "\(self.baseUrl)/set_mode_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["mode": self.currentMode]
+        var mode: String = ""
+        if light == .laser {
+            mode = self.laser.mode.rawValue
+        } else if light == .movingHead {
+            mode = self.movingHead.mode.rawValue
+        } else {
+            return
+        }
+        let body = ["mode": mode]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func toggleStrobeMode() {
-        self.strobeModeEnabled.toggle()
-        setStrobeMode()
     }
     
     func setStrobeMode() {
-        guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["enabled": self.strobeModeEnabled]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    private func setMHMode() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_mode") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: String] = ["mode": self.mHMode.rawValue]
-        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-        
-        URLSession.shared.dataTask(with: request).resume()
+        for light in Light.allCases {
+            guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode_for/\(light)") else { return }
+            var request = URLRequest(url: url)
+            request.httpMethod = "POST"
+            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            let body = ["enabled": self.includedLightsStrobe.contains(light)]
+            request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+            
+            URLSession.shared.dataTask(with: request).resume()
+        }
     }
     
     private func setMHScene() {
@@ -420,35 +424,8 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: String] = ["scene": self.mhScene.rawValue]
+        let body: [String: String] = ["scene": self.movingHead.scene.rawValue]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func sendSingleStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/send_single_strobe") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func startMHStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/start_mh_strobe") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        
-        URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    func stopMHStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/stop_mh_strobe") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "POST"
-        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
         URLSession.shared.dataTask(with: request).resume()
     }
@@ -458,19 +435,32 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Int] = ["value": Int(self.mHStrobe)]
+        let body: [String: Int] = ["value": Int(self.movingHead.strobeSpeed)]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    // MARK: - Brightness control
-    func setMHDimmer() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_dimmer") else { return }
+    // MARK: - MH Brightness control
+    
+    func setMHBrightness() {
+        guard let url = URL(string: "\(self.baseUrl)/set_mh_brightness") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Int] = ["value": Int(self.mHDimmer)]
+        let body: [String: Int] = ["value": Int(self.movingHead.brightness)]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func toggleMhBreathe() {
+        self.movingHead.breathe.toggle()
+        guard let url = URL(string: "\(self.baseUrl)/set_mh_breathe") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Bool] = ["breathe": self.movingHead.breathe]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -479,7 +469,7 @@ class LaserConfig: ObservableObject {
     // MARK: - Advanced options
     
     func resetVerticalAdjust() {
-        self.verticalAdjust = 63
+        self.laser.verticalAdjust = 63
         setVerticalAdjust()
     }
     
@@ -488,7 +478,7 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["adjust": self.verticalAdjust]
+        let body = ["adjust": self.laser.verticalAdjust]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -499,7 +489,7 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["enabled": self.horizontalAnimationEnabled, "speed": self.horizontalAnimationSpeed] as [String : Any]
+        let body = ["enabled": self.laser.horizontalAnimationEnabled, "speed": self.laser.horizontalAnimationSpeed] as [String : Any]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -510,12 +500,12 @@ class LaserConfig: ObservableObject {
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body = ["enabled": self.verticalAnimationEnabled, "speed": self.verticalAnimationSpeed] as [String : Any]
+        let body = ["enabled": self.laser.verticalAnimationEnabled, "speed": self.laser.verticalAnimationSpeed] as [String : Any]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
         
-        if !self.verticalAnimationEnabled {
+        if !self.laser.verticalAnimationEnabled {
             // Set back vertical adjust to pre-animation setting
             self.setVerticalAdjust()
         }
@@ -523,14 +513,14 @@ class LaserConfig: ObservableObject {
     
     // MARK: - BPM sync
     
-    func toggleBpmSync(type: String) {
-        if activeSyncTypes.contains(type) {
-            activeSyncTypes.remove(type)
-            if activeSyncTypes.isEmpty {
+    func toggleBpmSync(mode: BPMSyncMode) {
+        if laser.bpmSyncModes.contains(mode) {
+            laser.bpmSyncModes.remove(mode)
+            if laser.bpmSyncModes.isEmpty {
                 stopBpmSyncTimer()
             }
         } else {
-            activeSyncTypes.insert(type)
+            laser.bpmSyncModes.insert(mode)
             startBpmSyncTimer()
         }
         setSyncMode()
@@ -538,24 +528,27 @@ class LaserConfig: ObservableObject {
     
     private func startBpmSyncTimer() {
         stopBpmSyncTimer()
+        
+        // Convertir le Set en un tableau ordonné
+        
         bpmSyncTimer = Timer.scheduledTimer(withTimeInterval: (60.0 / Double(currentBpm)) * bpmMultiplier, repeats: true) { _ in
-            if self.activeSyncTypes.contains("pattern") {
-                let activePatterns = self.patterns.enumerated().filter { self.includedPatterns.contains($0.element.name) }
-                if !activePatterns.isEmpty {
-                    let currentActiveIndex = activePatterns.firstIndex(where: { $0.offset == self.currentPatternIndex }) ?? 0
-                    let nextActiveIndex = (currentActiveIndex + 1) % activePatterns.count
-                    self.currentPatternIndex = activePatterns[nextActiveIndex].offset
-                }
+            let orderedLaserPatterns = Array(self.laser.includedPatterns)
+            if self.laser.bpmSyncModes.contains(.pattern) && !orderedLaserPatterns.isEmpty {
+                // Incrémenter l'index et réinitialiser lorsqu'on atteint la fin
+                self.bpmSyncLaserPatternIndex = (self.bpmSyncLaserPatternIndex + 1) % orderedLaserPatterns.count
+                self.laser.pattern = orderedLaserPatterns[self.bpmSyncLaserPatternIndex]
             }
-            if self.activeSyncTypes.contains("color") {
-                self.currentLaserColorIndex = (self.currentLaserColorIndex + 1) % self.laserColors.count
+            if self.laser.bpmSyncModes.contains(.color) && !self.laserColors.isEmpty {
+                // Incrémenter l'index des couleurs et réinitialiser lorsqu'on atteint la fin
+                self.bpmSyncLaserColorIndex = (self.bpmSyncLaserColorIndex + 1) % self.laserColors.count
+                self.laser.color = self.laserColors[self.bpmSyncLaserColorIndex]
             }
         }
     }
     
     func restartBpmSyncTimer() {
         stopBpmSyncTimer()
-        if !activeSyncTypes.isEmpty {
+        if !self.laser.bpmSyncModes.isEmpty {
             startBpmSyncTimer()
         }
     }
@@ -577,7 +570,7 @@ class LaserConfig: ObservableObject {
     }
     
     func setSyncMode() {
-        let syncModes = Array(activeSyncTypes).joined(separator: ",")
+        let syncModes = self.laser.bpmSyncModes.map { $0.rawValue }.joined(separator: ",")
         guard let url = URL(string: "\(self.baseUrl)/set_sync_mode") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"

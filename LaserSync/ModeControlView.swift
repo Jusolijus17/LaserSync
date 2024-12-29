@@ -9,29 +9,29 @@ import SwiftUI
 
 struct ModeControlView: View {
     @EnvironmentObject var laserConfig: LaserConfig
+    @State private var selectedLights: Set<Light> = []
     
     var body: some View {
         VStack(spacing: 20) {
+            
             Spacer()
             
-            Text(laserConfig.currentMode.capitalized)
-                .font(.largeTitle)
-                .foregroundColor(.white)
+            LightImage(light: .both, selectable: true, selection: $selectedLights)
             
             Spacer()
             
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
-                ForEach(laserConfig.modes, id: \.self) { mode in
+                ForEach(LightMode.allCases) { mode in
                     Button(action: {
                         hapticFeedback()
-                        changeLaserMode(mode: mode)
+                        change(mode)
                     }) {
-                        Text(mode.capitalized)
+                        Text(mode.rawValue.capitalized)
                             .font(.title2)
                             .fontWeight(.semibold)
                             .frame(height: 150)
                             .frame(maxWidth: .infinity)
-                            .background(laserConfig.currentMode == mode ? Color.green : Color.gray)
+                            .background(isModeEnabled(mode: mode) ? Color.green : Color.gray)
                             .foregroundColor(.white)
                             .cornerRadius(10)
                             .shadow(radius: 5)
@@ -40,28 +40,68 @@ struct ModeControlView: View {
             }
             .padding(.horizontal, 20)
             
+            // Strobe mode
             Button(action: {
                 hapticFeedback()
-                laserConfig.toggleStrobeMode()
+                toggleStrobeMode()
             }) {
                 Text("Strobe")
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(laserConfig.strobeModeEnabled ? Color.yellow : Color.gray)
-                    .foregroundColor(.black)
+                    .background(isStrobeActive() ? Color.yellow : Color.gray)
+                    .foregroundColor(.white)
                     .cornerRadius(10)
                     .shadow(radius: 5)
             }
             .padding(.horizontal, 20)
             .padding(.bottom)
-            
-            Spacer().fixedSize()
         }
     }
     
-    func changeLaserMode(mode: String) {
-        laserConfig.currentMode = mode
-        laserConfig.setMode()
+    func change(_ mode: LightMode) {
+        if selectedLights.contains(.laser) {
+            laserConfig.laser.mode = mode
+            laserConfig.setModeFor(.laser)
+        }
+        if selectedLights.contains(.movingHead) {
+            if mode == .blackout {
+                laserConfig.turnOffMovingHead()
+            } else {
+                laserConfig.movingHead.mode = mode
+                laserConfig.setModeFor(.movingHead)
+            }
+            
+        }
+    }
+    
+    func toggleStrobeMode() {
+        for light in selectedLights {
+            if laserConfig.includedLightsStrobe.contains(light) {
+                laserConfig.includedLightsStrobe.remove(light)
+            } else {
+                laserConfig.includedLightsStrobe.insert(light)
+            }
+        }
+        laserConfig.setStrobeMode()
+    }
+    
+    private func isModeEnabled(mode: LightMode) -> Bool {
+        if selectedLights.contains(.movingHead) && selectedLights.contains(.laser) {
+            if laserConfig.laser.mode == laserConfig.movingHead.mode {
+                return laserConfig.laser.mode == mode
+            } else {
+                return false
+            }
+        } else if selectedLights.contains(.laser) {
+            return laserConfig.laser.mode == mode
+        } else if selectedLights.contains(.movingHead) {
+            return laserConfig.movingHead.mode == mode
+        }
+        return false
+    }
+    
+    private func isStrobeActive() -> Bool {
+        return selectedLights.isSubset(of: laserConfig.includedLightsStrobe) && !selectedLights.isEmpty
     }
     
     func hapticFeedback() {
