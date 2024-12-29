@@ -66,7 +66,7 @@ struct SummaryView: View {
                         Text("Cue color")
                             .font(.title2)
                             .padding(.horizontal)
-                        let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .gray]
+                        let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .white]
                         ColorSelectorView(selectedColor: $cue.color, colors: colors)
                     }
                 }
@@ -248,7 +248,7 @@ struct ColorSelectorView: View {
                         if selectedColor == color {
                             Image(systemName: "checkmark")
                                 .font(.headline)
-                                .foregroundColor(.white)
+                                .foregroundColor(color == .white ? .black : .white)
                                 .bold()
                         }
                     }

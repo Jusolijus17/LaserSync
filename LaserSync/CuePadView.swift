@@ -26,7 +26,7 @@ struct CuePadView: View {
                                         .multilineTextAlignment(.center)
                                         .font(.title2)
                                         .fontWeight(.semibold)
-                                        .foregroundStyle(.white)
+                                        .foregroundStyle(cue.color == .white ? .black : .white)
                                         .padding(.horizontal, 2)
                                 }
                             }

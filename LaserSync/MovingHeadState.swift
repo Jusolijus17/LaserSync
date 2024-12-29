@@ -32,12 +32,14 @@ extension MovingHeadState {
 
             case .position:
                 self.positionPreset = other.positionPreset
+                self.scene = .off
 
             case .strobeSpeed:
                 self.strobeSpeed = other.strobeSpeed
 
             case .brightness:
                 self.brightness = other.brightness
+                self.breathe = other.breathe
 
             default:
                 break // Ignorer les réglages non pertinents au moving head
