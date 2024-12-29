@@ -6,13 +6,13 @@
 //
 
 import SwiftUI
+import Foundation
 
 class HomeController: ObservableObject {
     private var laserConfig: LaserConfig?
     
     @Published var isRequestInProgress = false
     @Published var isBlinking = false
-    @Published var blinkingTimer: Timer?
     @Published var networkErrorCount = 0
     @Published var showRetry = false
     @Published var isHorizontalAnimationBlinking = false
@@ -24,21 +24,44 @@ class HomeController: ObservableObject {
     @Published var isPressed = false
     @Published var timer: Timer?
     
+    private var blinkingTimer: DispatchSourceTimer?
+    
     func setLaserConfig(_ laserConfig: LaserConfig) {
         self.laserConfig = laserConfig
     }
     
     func startBlinking() {
         guard let laserConfig else { return }
-        blinkingTimer = Timer.scheduledTimer(withTimeInterval: 60.0 / Double(laserConfig.currentBpm) / 2, repeats: true) { _ in
-            self.isBlinking.toggle()
-        }
-    }
-
-    func stopBlinking() {
-        blinkingTimer?.invalidate()
+        
+        // Arrête le Timer existant avant d'en créer un nouveau
+        blinkingTimer?.cancel()
         blinkingTimer = nil
-        isBlinking = true
+        
+        let interval = 60.0 / Double(laserConfig.currentBpm) / 2
+        
+        // Crée un nouveau DispatchSourceTimer
+        let timer = DispatchSource.makeTimerSource(queue: DispatchQueue.global(qos: .background))
+        timer.schedule(deadline: .now(), repeating: interval)
+        
+        // Définir le comportement du Timer
+        timer.setEventHandler { [weak self] in
+            guard let self = self else { return }
+            DispatchQueue.main.async {
+                self.isBlinking.toggle()
+            }
+        }
+        
+        // Démarre le Timer
+        blinkingTimer = timer
+        timer.activate()
+    }
+    
+    func stopBlinking() {
+        blinkingTimer?.cancel()
+        blinkingTimer = nil
+        DispatchQueue.main.async {
+            self.isBlinking = false
+        }
     }
     
     func restartBlinking() {
@@ -59,22 +82,22 @@ class HomeController: ObservableObject {
 
     func changeLaserColor() {
         guard let laserConfig else { return }
-        var nextColor: Color? = laserConfig.laserColor
+        var nextColor: LaserColor? = laserConfig.laser.color
         repeat {
-            nextColor = LaserColor.allCases.randomElement()?.color
-        } while nextColor == laserConfig.laserColor || nextColor == nil
-        laserConfig.laserColor = nextColor!
-        laserConfig.changeColor(light: .laser, color: laserConfig.laserColor)
+            nextColor = LaserColor.allCases.randomElement()
+        } while nextColor == laserConfig.laser.color || nextColor == nil
+        laserConfig.laser.color = nextColor!
+        laserConfig.changeColor(lights: [.laser: laserConfig.laser.color.colorValue])
     }
     
     func changeMHColor() {
         guard let laserConfig else { return }
-        var nextColor: Color? = laserConfig.mHColor
+        var nextColor: MovingHeadColor? = laserConfig.movingHead.color
         repeat {
-            nextColor = MovingHeadColor.allCases.randomElement()?.color
-        } while nextColor == laserConfig.mHColor || nextColor == nil
-        laserConfig.mHColor = nextColor!
-        laserConfig.changeColor(light: .movingHead, color: laserConfig.mHColor)
+            nextColor = MovingHeadColor.allCases.randomElement()
+        } while nextColor == laserConfig.movingHead.color || nextColor == nil
+        laserConfig.movingHead.color = nextColor!
+        laserConfig.changeColor(lights: [.movingHead : laserConfig.movingHead.color.colorValue])
     }
 
     func changePattern() {
@@ -82,15 +105,9 @@ class HomeController: ObservableObject {
         var newPattern: LaserPattern
         repeat {
             newPattern = LaserPattern.allCases.randomElement()!
-        } while newPattern == laserConfig.currentLaserPattern
-        laserConfig.currentLaserPattern = newPattern
+        } while newPattern == laserConfig.laser.pattern
+        laserConfig.laser.pattern = newPattern
         laserConfig.setPattern()
-    }
-
-    func toggleLaserMode() {
-        guard let laserConfig else { return }
-        laserConfig.laserMode = laserConfig.laserMode == .manual ? .blackout : .manual
-        laserConfig.setModeFor(.laser)
     }
     
     func startHorizontalBlinking() {
@@ -121,8 +138,8 @@ class HomeController: ObservableObject {
 
     func toggleHorizontalAnimation() {
         guard let laserConfig else { return }
-        laserConfig.horizontalAnimationEnabled.toggle()
-        if laserConfig.horizontalAnimationEnabled {
+        laserConfig.laser.horizontalAnimationEnabled.toggle()
+        if laserConfig.laser.horizontalAnimationEnabled {
             startHorizontalBlinking()
         } else {
             stopHorizontalBlinking()
@@ -132,8 +149,8 @@ class HomeController: ObservableObject {
 
     func toggleVerticalAnimation() {
         guard let laserConfig else { return }
-        laserConfig.verticalAnimationEnabled.toggle()
-        if laserConfig.verticalAnimationEnabled {
+        laserConfig.laser.verticalAnimationEnabled.toggle()
+        if laserConfig.laser.verticalAnimationEnabled {
             startVerticalBlinking()
         } else {
             stopVerticalBlinking()

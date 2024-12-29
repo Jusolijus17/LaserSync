@@ -37,7 +37,7 @@ struct CueListView: View {
     }
     
     func getCueMakerStep(_ cue: Cue) -> CueMakerStep {
-        if cue.includeLaser {
+        if cue.affectedLights.contains(.laser) {
             return .laserSettings
         }
         return .movingHeadSettings
@@ -46,8 +46,8 @@ struct CueListView: View {
     // Fonction pour obtenir les lumières activées
     func getLights(cue: Cue) -> String {
         var lights: [String] = []
-        if cue.includeLaser { lights.append("Laser") }
-        if cue.includeMovingHead { lights.append("Moving Head") }
+        if cue.affectedLights.contains(.laser) { lights.append("Laser") }
+        if cue.affectedLights.contains(.movingHead) { lights.append("Moving Head") }
         return lights.isEmpty ? "No Lights" : "Lights: " + lights.joined(separator: ", ")
     }
     
@@ -87,8 +87,8 @@ struct CueRowView: View {
     // Fonction locale pour obtenir les lumières activées
     func getLights(cue: Cue) -> String {
         var lights: [String] = []
-        if cue.includeLaser { lights.append("Laser") }
-        if cue.includeMovingHead { lights.append("Moving Head") }
+        if cue.affectedLights.contains(.laser) { lights.append("Laser") }
+        if cue.affectedLights.contains(.movingHead) { lights.append("Moving Head") }
         return lights.isEmpty ? "No Lights" : "Lights: " + lights.joined(separator: ", ")
     }
 }

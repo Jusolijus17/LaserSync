@@ -87,7 +87,7 @@ enum MovingHeadColor: String, LightColors {
 }
 
 extension MovingHeadColor {
-    var color: Color {
+    var colorValue: Color {
         switch self {
         case .auto: return .clear
         case .red: return .red
@@ -101,8 +101,8 @@ extension MovingHeadColor {
         }
     }
     
-    static func from(color: Color) -> MovingHeadColor? {
-        return MovingHeadColor.allCases.first(where: { $0.color == color })
+    static func from(color: Color) -> MovingHeadColor {
+        return MovingHeadColor.allCases.first(where: { $0.colorValue == color }) ?? .red
     }
 }
 
@@ -133,7 +133,7 @@ enum LaserColor: String, LightColors {
 }
 
 extension LaserColor {
-    var color: Color {
+    var colorValue: Color {
         switch self {
         case .multicolor: return .clear
         case .red: return .red
@@ -145,8 +145,8 @@ extension LaserColor {
         }
     }
     
-    static func from(color: Color) -> LaserColor? {
-        return LaserColor.allCases.first(where: { $0.color == color })
+    static func from(color: Color) -> LaserColor {
+        return LaserColor.allCases.first(where: { $0.colorValue == color }) ?? .multicolor
     }
 }
 

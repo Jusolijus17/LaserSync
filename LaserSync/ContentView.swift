@@ -24,9 +24,9 @@ struct ContentView: View {
                 }
                 .tag(1)
             
-            PatternControlView()
+            CuePadView()
                 .tabItem {
-                    Label("Pattern", systemImage: "rectangle.3.offgrid")
+                    Label("CuePad", systemImage: "square.grid.3x3.fill")
                 }
                 .tag(2)
             

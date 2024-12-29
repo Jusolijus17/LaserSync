@@ -46,28 +46,33 @@ extension Array {
 
 extension Color: Codable {
     private enum CodingKeys: String, CodingKey {
-        case red, green, blue, opacity
+        case name
     }
 
     public func encode(to encoder: Encoder) throws {
         var container = encoder.container(keyedBy: CodingKeys.self)
-        let uiColor = UIColor(self)
-        guard let components = uiColor.cgColor.components else {
-            throw EncodingError.invalidValue(self, EncodingError.Context(codingPath: encoder.codingPath, debugDescription: "Unable to extract color components."))
+        if let colorName = self.name {
+            try container.encode(colorName, forKey: .name)
+        } else {
+            try container.encode("unknown", forKey: .name)
         }
-        try container.encode(components[0], forKey: .red) // Rouge
-        try container.encode(components[1], forKey: .green) // Vert
-        try container.encode(components[2], forKey: .blue) // Bleu
-        try container.encode(uiColor.cgColor.alpha, forKey: .opacity) // Opacité
     }
 
     public init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
-        let red = try container.decode(CGFloat.self, forKey: .red)
-        let green = try container.decode(CGFloat.self, forKey: .green)
-        let blue = try container.decode(CGFloat.self, forKey: .blue)
-        let opacity = try container.decode(CGFloat.self, forKey: .opacity)
-        self = Color(.sRGB, red: red, green: green, blue: blue, opacity: opacity)
+        let colorName = try container.decode(String.self, forKey: .name)
+
+        switch colorName {
+        case "red": self = .red
+        case "blue": self = .blue
+        case "green": self = .green
+        case "pink": self = .pink
+        case "cyan": self = .cyan
+        case "yellow": self = .yellow
+        case "orange": self = .orange
+        case "white": self = .white
+        default: self = .clear // Valeur par défaut pour les couleurs inconnues
+        }
     }
 }
 
@@ -110,5 +115,22 @@ extension Animation {
         } else {
             return self
         }
+    }
+}
+
+extension Set where Element == Light {
+    func binding(for light: Light, in bindingSet: Binding<Set<Light>>) -> Binding<Bool> {
+        return Binding<Bool>(
+            get: {
+                bindingSet.wrappedValue.contains(light)
+            },
+            set: { isSelected in
+                if isSelected {
+                    bindingSet.wrappedValue.insert(light)
+                } else {
+                    bindingSet.wrappedValue.remove(light)
+                }
+            }
+        )
     }
 }

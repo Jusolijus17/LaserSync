@@ -22,7 +22,7 @@ struct SummaryView: View {
                 ScrollView {
                     VStack(spacing: 20) {
                         // Section Laser
-                        if cue.includeLaser {
+                        if cue.affectedLights.contains(.laser) {
                             SummaryLightSection(
                                 iconName: "laser_icon", // Nom de l'icône pour le laser
                                 lightName: "Laser",
@@ -34,7 +34,7 @@ struct SummaryView: View {
                         }
                         
                         // Section Moving Head
-                        if cue.includeMovingHead {
+                        if cue.affectedLights.contains(.movingHead) {
                             SummaryLightSection(
                                 iconName: "moving_head_icon", // Nom de l'icône pour le moving head
                                 lightName: "Moving Head",
@@ -112,26 +112,26 @@ struct SummaryView: View {
         var details: [(String, String)] = []
         
         // Mode
-        details.append(("Mode", cue.laserMode.rawValue.capitalized))
+        details.append(("Mode", cue.laser.mode.rawValue.capitalized))
         
         // Blackout
-        if cue.laserMode == .blackout {
+        if cue.laser.mode == .blackout {
             return details
         }
         
         // Auto & Sound
-        if cue.laserMode != .manual {
+        if cue.laser.mode != .manual {
             details.append(("Color", "Auto"))
             details.append(("Pattern", "Auto"))
             return details
         }
         
         // Color
-        let color = cue.laserBPMSyncModes.contains(.color) ? "Sync" : cue.laserColor.rawValue.capitalized
+        let color = cue.laser.bpmSyncModes.contains(.color) ? "Sync" : cue.laser.color.rawValue.capitalized
         details.append(("Color", color))
         
         // Pattern
-        let pattern = cue.laserBPMSyncModes.contains(.pattern) ? "Sync" : cue.laserPattern.rawValue.capitalized
+        let pattern = cue.laser.bpmSyncModes.contains(.pattern) ? "Sync" : cue.laser.pattern.rawValue.capitalized
         details.append(("Pattern", pattern))
         
         return details
@@ -141,14 +141,14 @@ struct SummaryView: View {
         var details: [(String, String)] = []
         
         // Mode
-        details.append(("Mode", cue.movingHeadMode.rawValue.capitalized))
+        details.append(("Mode", cue.movingHead.mode.rawValue.capitalized))
         
         // Blackout
-        if cue.movingHeadMode == .blackout {
+        if cue.movingHead.mode == .blackout {
             return details
         }
         
-        if cue.movingHeadMode != .manual {
+        if cue.movingHead.mode != .manual {
             details.append(("Scene", "Off"))
             details.append(("Position", "Off"))
             details.append(("Color", "Auto"))
@@ -159,27 +159,27 @@ struct SummaryView: View {
         }
         
         // Scene
-        let scene = cue.movingHeadScene.rawValue.capitalized
+        let scene = cue.movingHead.scene.rawValue.capitalized
         details.append(("Scene", scene))
         
         // Position
-        let position = "\(cue.positionPreset?.name ?? "Off")"
+        let position = "\(cue.movingHead.positionPreset?.name ?? "Off")"
         details.append(("Position", position))
         
         // Color
-        let color = cue.movingHeadColorFrequency != 0 ? "Auto" : cue.movingHeadColor.rawValue.capitalized
+        let color = cue.movingHead.colorSpeed != 0 ? "Auto" : cue.movingHead.color.rawValue.capitalized
         details.append(("Color", color))
         
         // Color Speed
-        let colorFrequency = cue.movingHeadColorFrequency == 0 ? "Off" : "\(Int(cue.movingHeadColorFrequency))%"
+        let colorFrequency = cue.movingHead.colorSpeed == 0 ? "Off" : "\(Int(cue.movingHead.colorSpeed))%"
         details.append(("Color Speed", colorFrequency))
         
         // Strobe
-        let strobe = cue.movingHeadStrobeFrequency == 0 ? "Off" : "\(Int(cue.movingHeadStrobeFrequency))%"
+        let strobe = cue.movingHead.strobeSpeed == 0 ? "Off" : "\(Int(cue.movingHead.strobeSpeed))%"
         details.append(("Strobe", strobe))
         
         // Brightness
-        let brightness = cue.movingHeadBrightness == 0 ? "Off" : "\(Int(cue.movingHeadBrightness))%"
+        let brightness = cue.movingHead.brightness == 0 ? "Off" : "\(Int(cue.movingHead.brightness))%"
         details.append(("Brightness", brightness))
         
         return details

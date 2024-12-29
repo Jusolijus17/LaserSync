@@ -16,51 +16,16 @@ struct PatternControlView: View {
             RoundedRectangle(cornerRadius: 10)
                 .strokeBorder(style: .init(lineWidth: 5, lineJoin: .round))
                 .background {
-                    laserConfig.currentLaserPattern.shape
-                        .multicolor(isEnabled: laserConfig.laserColor == .clear)
-                        .foregroundStyle(laserConfig.laserColor)
+                    laserConfig.laser.pattern.shape
+                        .multicolor(isEnabled: laserConfig.laser.color.colorValue == .clear)
+                        .foregroundStyle(laserConfig.laser.color.colorValue)
                         .padding(20)
                 }
                 .shadow(radius: 10)
                 .padding()
             
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
-                ForEach(LaserPattern.allCases) { laserPattern in
-                    Button(action: {
-                        hapticFeedback()
-                        if laserConfig.laserBPMSyncModes.contains(.pattern) {
-                            laserConfig.togglePatternInclusion(pattern: laserPattern)
-                        } else {
-                            laserConfig.currentLaserPattern = laserPattern
-                            laserConfig.setPattern()
-                        }
-                    }) {
-                        laserPattern.shape
-                            .foregroundStyle(.white)
-                            .padding(20)
-                            .frame(height: 100)
-                            .frame(maxWidth: .infinity)
-                            .background(getBackgroundColor(pattern: laserPattern))
-                            .cornerRadius(10)
-                            .shadow(radius: 5)
-                    }
-                }
-            }
-            .padding(.horizontal, 20)
-            
-            Button(action: {
-                hapticFeedback()
-                laserConfig.toggleBpmSync(mode: .pattern)
-            }) {
-                Text("BPM Sync")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity, minHeight: 50)
-                    .background(laserConfig.laserBPMSyncModes.contains(.pattern) ? Color.yellow : Color.gray)
-                    .foregroundColor(.black)
-                    .cornerRadius(10)
-                    .shadow(radius: 5)
-            }
-            .padding(.horizontal, 20)
+            PatternSelector()
+                .padding(.horizontal)
             
             Spacer()
         }
@@ -72,15 +37,74 @@ struct PatternControlView: View {
     }
     
     func getBackgroundColor(pattern: LaserPattern) -> Color {
-        if laserConfig.currentLaserPattern == pattern && laserConfig.laserBPMSyncModes.contains(.pattern) && laserConfig.laserIncludedPatterns.contains(pattern) {
+        if laserConfig.laser.pattern == pattern && laserConfig.laser.bpmSyncModes.contains(.pattern) && laserConfig.laser.includedPatterns.contains(pattern) {
             return .green
-        } else if laserConfig.currentLaserPattern == pattern && !laserConfig.laserBPMSyncModes.contains(.pattern) {
+        } else if laserConfig.laser.pattern == pattern && !laserConfig.laser.bpmSyncModes.contains(.pattern) {
             return .green
-        } else if laserConfig.laserBPMSyncModes.contains(.pattern) && !laserConfig.laserIncludedPatterns.contains(pattern) {
+        } else if laserConfig.laser.bpmSyncModes.contains(.pattern) && !laserConfig.laser.includedPatterns.contains(pattern) {
             return .gray.opacity(0.5)
         } else {
             return .gray
         }
+    }
+}
+
+struct PatternSelector: View {
+    @EnvironmentObject private var laserConfig: LaserConfig
+    
+    var body: some View {
+        VStack {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
+                ForEach(LaserPattern.allCases) { laserPattern in
+                    Button(action: {
+                        hapticFeedback()
+                        if laserConfig.laser.bpmSyncModes.contains(.pattern) {
+                            laserConfig.togglePatternInclusion(pattern: laserPattern)
+                        } else {
+                            laserConfig.laser.pattern = laserPattern
+                            laserConfig.setPattern()
+                        }
+                    }) {
+                        laserPattern.shape
+                            .foregroundStyle(.white)
+                            .padding(20)
+                            .frame(height: 100)
+                            .frame(maxWidth: .infinity)
+                            .background(getBackgroundColor(pattern: laserPattern))
+                            .cornerRadius(10)
+                    }
+                }
+            }
+            
+            Button(action: {
+                hapticFeedback()
+                laserConfig.toggleBpmSync(mode: .pattern)
+            }) {
+                Text("BPM Sync")
+                    .font(.headline)
+                    .frame(maxWidth: .infinity, minHeight: 50)
+                    .background(laserConfig.laser.bpmSyncModes.contains(.pattern) ? Color.yellow : Color.gray)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+            }
+        }
+    }
+    
+    func getBackgroundColor(pattern: LaserPattern) -> Color {
+        if laserConfig.laser.pattern == pattern && laserConfig.laser.bpmSyncModes.contains(.pattern) && laserConfig.laser.includedPatterns.contains(pattern) {
+            return .green
+        } else if laserConfig.laser.pattern == pattern && !laserConfig.laser.bpmSyncModes.contains(.pattern) {
+            return .green
+        } else if laserConfig.laser.bpmSyncModes.contains(.pattern) && !laserConfig.laser.includedPatterns.contains(pattern) {
+            return .black.opacity(0.8)
+        } else {
+            return .gray
+        }
+    }
+    
+    func hapticFeedback() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
     }
 }
 

@@ -101,7 +101,7 @@
 //                    Text("BPM Sync")
 //                        .font(.headline)
 //                        .frame(maxWidth: .infinity, minHeight: 50)
-//                        .background(laserConfig.laserBPMSyncModes.contains(.color) ? Color.yellow : Color.gray)
+//                        .background(laserConfig.laserState.laserBPMSyncModes.contains(.color) ? Color.yellow : Color.gray)
 //                        .foregroundColor(.black)
 //                        .cornerRadius(10)
 //                        .shadow(radius: 5)
@@ -109,8 +109,8 @@
 //                .padding(.horizontal, 20)
 //                Spacer()
 //            } else if laserConfig.getChangeColorTarget() == .movingHead {
-//                CustomSliderView(sliderValue: $laserConfig.mHColorSpeed, title: "Color speed")
-//                    .onChange(of: laserConfig.mHColorSpeed) { _, newValue in
+//                CustomSliderView(sliderValue: $laserConfig.movingHeadState.mHColorSpeed, title: "Color speed")
+//                    .onChange(of: laserConfig.movingHeadState.mHColorSpeed) { _, newValue in
 //                        laserConfig.setMHColorSpeed()
 //                        if newValue == 0 || newValue == 100 {
 //                            hapticFeedback()

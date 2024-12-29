@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct LaunchpadView: View {
+struct CuePadView: View {
     @EnvironmentObject var laserConfig: LaserConfig
     @EnvironmentObject var sharedStates: SharedStates
     @State private var cues: [Cue?] = [] // Liste des Cue, incluant des cases vides
@@ -16,10 +16,9 @@ struct LaunchpadView: View {
     
     var body: some View {
         VStack {
-            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 25) {
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 20) {
                 ForEach(0..<totalSlots, id: \.self) { index in
                     if index < cues.count, let cue = cues[index] {
-                        // Bouton représentant un Cue existant
                         LaunchpadButton(color: cue.color)
                             .overlay {
                                 if sharedStates.showCueLabels {
@@ -33,20 +32,19 @@ struct LaunchpadView: View {
                             }
                             .onLongPressGesture(minimumDuration: 0.1) {
                                 if cue.type == .temporary {
-                                    print("Pressed")
+                                    print("Temp cue start")
                                     hapticFeedback()
                                     cuePressed = true
                                     laserConfig.setCue(cue)
                                 }
                             } onPressingChanged: { isPressing in
                                 if !isPressing && cue.type == .temporary && cuePressed {
-                                    print("Temp cue stopped")
+                                    print("Temp cue stop")
                                     cuePressed = false
                                     laserConfig.stopCue()
                                 }
-                            }
-                            .onTapGesture {
-                                if cue.type == .definitive {
+                                if isPressing && cue.type == .definitive {
+                                    print("Cue")
                                     hapticFeedback()
                                     laserConfig.setCue(cue)
                                 }
@@ -117,7 +115,7 @@ struct LaunchpadButton: View {
 }
 
 #Preview {
-    LaunchpadView()
+    CuePadView()
         .environmentObject(LaserConfig())
         .environmentObject(SharedStates())
 }

@@ -18,13 +18,13 @@ struct CueMakerView: View {
                 SelectLightsView(
                     cue: $cue,
                     onNext: {
-                        cue.includeLaser ? currentStep = .laserSettings : (cue.includeMovingHead ? (currentStep = .movingHeadSettings) : (currentStep = .selectLights))
+                        cue.affectedLights.contains(.laser) ? currentStep = .laserSettings : (cue.affectedLights.contains(.movingHead) ? (currentStep = .movingHeadSettings) : (currentStep = .selectLights))
                     }
                 )
             case .laserSettings:
                 LaserCueSetup(
                     cue: $cue,
-                    onNext: { cue.includeMovingHead ? (currentStep = .movingHeadSettings) : (currentStep = .summary) }
+                    onNext: { cue.affectedLights.contains(.movingHead) ? (currentStep = .movingHeadSettings) : (currentStep = .summary) }
                 )
                 .navigationTitle("Laser settings")
                 .navigationBarTitleDisplayMode(.inline)
@@ -53,11 +53,11 @@ struct CueMakerView: View {
     private func navigateToStep(for section: String) {
         switch section {
         case "Laser":
-            if cue.includeLaser {
+            if cue.affectedLights.contains(.laser) {
                 currentStep = .laserSettings
             }
         case "Moving Head":
-            if cue.includeMovingHead {
+            if cue.affectedLights.contains(.movingHead) {
                 currentStep = .movingHeadSettings
             }
         default:
@@ -82,12 +82,12 @@ struct SelectLightsView: View {
             HStack(spacing: 20) {
                 LightSelectionButton(
                     title: "Laser",
-                    isSelected: $cue.includeLaser,
+                    isSelected: cue.affectedLights.binding(for: .laser, in: $cue.affectedLights),
                     imageName: "laser_icon"
                 )
                 LightSelectionButton(
                     title: "Moving Head",
-                    isSelected: $cue.includeMovingHead,
+                    isSelected: cue.affectedLights.binding(for: .movingHead, in: $cue.affectedLights),
                     imageName: "moving_head_icon"
                 )
             }

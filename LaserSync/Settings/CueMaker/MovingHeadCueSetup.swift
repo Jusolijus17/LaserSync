@@ -24,14 +24,14 @@ struct MovingHeadCueSetup: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                         ForEach(LightMode.allCases) { mode in
                             Button(action: {
-                                cue.movingHeadMode = mode
+                                cue.movingHead.mode = mode
                             }) {
                                 Text(mode.rawValue.capitalized)
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .frame(height: 50)
                                     .frame(maxWidth: .infinity)
-                                    .background(cue.movingHeadMode == mode ? Color.green : Color.gray)
+                                    .background(cue.movingHead.mode == mode ? Color.green : Color.gray)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .shadow(radius: 5)
@@ -48,8 +48,8 @@ struct MovingHeadCueSetup: View {
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                                 ForEach(MovingHeadScene.allCases.reversed()) { scene in
                                     Button(action: {
-                                        cue.positionPreset = nil
-                                        cue.movingHeadScene = scene
+                                        cue.movingHead.positionPreset = nil
+                                        cue.movingHead.scene = scene
                                     }) {
                                         Text(scene.rawValue.capitalized)
                                             .foregroundStyle(.white)
@@ -66,7 +66,7 @@ struct MovingHeadCueSetup: View {
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.scene))
                         }
-                        .disabledStyle(cue.positionPreset != nil)
+                        .disabledStyle(cue.movingHead.positionPreset != nil)
                         
                         Group {
                             // Position
@@ -74,7 +74,7 @@ struct MovingHeadCueSetup: View {
                             
                             Menu {
                                 Button {
-                                    cue.positionPreset = nil
+                                    cue.movingHead.positionPreset = nil
                                 } label: {
                                     Text("Off")
                                 }
@@ -82,8 +82,8 @@ struct MovingHeadCueSetup: View {
                                 // Options pour chaque preset
                                 ForEach(positionPresets) { preset in
                                     Button {
-                                        cue.movingHeadScene = .off
-                                        cue.positionPreset = preset
+                                        cue.movingHead.scene = .off
+                                        cue.movingHead.positionPreset = preset
                                     } label: {
                                         Text(preset.name)
                                     }
@@ -94,7 +94,7 @@ struct MovingHeadCueSetup: View {
                                     .frame(height: 50)
                                     .overlay {
                                         HStack {
-                                            Text(cue.positionPreset?.name ?? "Off")
+                                            Text(cue.movingHead.positionPreset?.name ?? "Off")
                                                 .font(.headline)
                                                 .foregroundStyle(.white)
                                             Spacer()
@@ -106,7 +106,7 @@ struct MovingHeadCueSetup: View {
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.position))
                         }
-                        .disabledStyle(cue.movingHeadScene != .off)
+                        .disabledStyle(cue.movingHead.scene != .off)
                         
                         // Color
                         SettingToggle(settings: $cue.movingHeadSettings, setting: .color, label: "Set Color")
@@ -116,10 +116,10 @@ struct MovingHeadCueSetup: View {
                                 ForEach(MovingHeadColor.allCases) { movingHeadColor in
                                     if movingHeadColor != .auto {
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(movingHeadColor.color)
+                                            .fill(movingHeadColor.colorValue)
                                             .frame(width: 50, height: 50)
                                             .overlay {
-                                                if cue.movingHeadColor == movingHeadColor {
+                                                if cue.movingHead.color == movingHeadColor {
                                                     Image(systemName: "checkmark")
                                                         .foregroundStyle(movingHeadColor == .white ? .black : .white)
                                                         .fontWeight(.semibold)
@@ -127,49 +127,49 @@ struct MovingHeadCueSetup: View {
                                                 }
                                             }
                                             .onTapGesture {
-                                                cue.movingHeadColor = movingHeadColor
+                                                cue.movingHead.color = movingHeadColor
                                             }
                                     }
                                 }
                             }
                             .padding(.bottom)
                         }
-                        .disabledStyle(cue.movingHeadColorFrequency != 0 || !cue.movingHeadSettings.contains(.color))
+                        .disabledStyle(cue.movingHead.colorSpeed != 0 || !cue.movingHeadSettings.contains(.color))
                         
-                        CustomSliderView(sliderValue: $cue.movingHeadColorFrequency, title: "Speed")
+                        CustomSliderView(sliderValue: $cue.movingHead.colorSpeed, title: "Speed")
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.color))
                         
                         // Strobe
-                        SettingToggle(settings: $cue.movingHeadSettings, setting: .strobe, label: "Set Strobe")
+                        SettingToggle(settings: $cue.movingHeadSettings, setting: .strobeSpeed, label: "Set Strobe")
                         
-                        CustomSliderView(sliderValue: $cue.movingHeadStrobeFrequency, title: "Intensity")
+                        CustomSliderView(sliderValue: $cue.movingHead.strobeSpeed, title: "Intensity")
                             .padding(.bottom)
-                            .disabledStyle(!cue.movingHeadSettings.contains(.strobe))
+                            .disabledStyle(!cue.movingHeadSettings.contains(.strobeSpeed))
                         
                         // Brightness
                         SettingToggle(settings: $cue.movingHeadSettings, setting: .brightness, label: "Set Brightness")
                         
-                        CustomSliderView(sliderValue: $cue.movingHeadBrightness, title: "Brightness")
+                        CustomSliderView(sliderValue: $cue.movingHead.brightness, title: "Brightness")
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
-                            .disabledStyle(cue.movingHeadBreathe)
+                            .disabledStyle(cue.movingHead.breathe)
                         
                         Button {
-                            cue.movingHeadBreathe.toggle()
+                            cue.movingHead.breathe.toggle()
                         } label: {
                             Label("Breathe", systemImage: "wave.3.up")
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(cue.movingHeadBreathe ? Color.yellow : Color.gray)
+                                .background(cue.movingHead.breathe ? Color.yellow : Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
                         .padding(.bottom)
                         .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
                     }
-                    .disabledStyle(cue.movingHeadMode != .manual)
+                    .disabledStyle(cue.movingHead.mode != .manual)
                 }
                 .padding()
                 .padding(.bottom, 65)
@@ -190,7 +190,7 @@ struct MovingHeadCueSetup: View {
     }
     
     func getBackgroundColor(_ scene: MovingHeadScene) -> Color {
-        if cue.movingHeadScene != scene {
+        if cue.movingHead.scene != scene {
             return .gray
         }
         switch scene {
@@ -206,10 +206,10 @@ struct MovingHeadCueSetup: View {
     }
     
     func togglePatternInclusion(_ pattern: LaserPattern) {
-        if cue.laserIncludedPatterns.contains(pattern) && cue.laserIncludedPatterns.count > 1 {
-            cue.laserIncludedPatterns.remove(pattern)
+        if cue.laser.includedPatterns.contains(pattern) && cue.laser.includedPatterns.count > 1 {
+            cue.laser.includedPatterns.remove(pattern)
         } else {
-            cue.laserIncludedPatterns.insert(pattern)
+            cue.laser.includedPatterns.insert(pattern)
         }
     }
 }

@@ -16,11 +16,7 @@ struct ModeControlView: View {
             
             Spacer()
             
-            LightImage(light: .both, selectable: true)
-                .onSelectionChange { lights in
-                    hapticFeedback()
-                    self.selectedLights = lights
-                }
+            LightImage(light: .both, selectable: true, selection: $selectedLights)
             
             Spacer()
             
@@ -53,7 +49,7 @@ struct ModeControlView: View {
                     .font(.headline)
                     .frame(maxWidth: .infinity, minHeight: 50)
                     .background(isStrobeActive() ? Color.yellow : Color.gray)
-                    .foregroundColor(.black)
+                    .foregroundColor(.white)
                     .cornerRadius(10)
                     .shadow(radius: 5)
             }
@@ -64,17 +60,21 @@ struct ModeControlView: View {
     
     func change(_ mode: LightMode) {
         if selectedLights.contains(.laser) {
-            laserConfig.laserMode = mode
+            laserConfig.laser.mode = mode
             laserConfig.setModeFor(.laser)
         }
         if selectedLights.contains(.movingHead) {
-            laserConfig.mHMode = mode
-            laserConfig.setModeFor(.movingHead)
+            if mode == .blackout {
+                laserConfig.turnOffMovingHead()
+            } else {
+                laserConfig.movingHead.mode = mode
+                laserConfig.setModeFor(.movingHead)
+            }
+            
         }
     }
     
     func toggleStrobeMode() {
-        // Ajoute ou retire les lumières sélectionnées du mode strobe
         for light in selectedLights {
             if laserConfig.includedLightsStrobe.contains(light) {
                 laserConfig.includedLightsStrobe.remove(light)
@@ -87,15 +87,15 @@ struct ModeControlView: View {
     
     private func isModeEnabled(mode: LightMode) -> Bool {
         if selectedLights.contains(.movingHead) && selectedLights.contains(.laser) {
-            if laserConfig.laserMode == laserConfig.mHMode {
-                return laserConfig.laserMode == mode
+            if laserConfig.laser.mode == laserConfig.movingHead.mode {
+                return laserConfig.laser.mode == mode
             } else {
                 return false
             }
         } else if selectedLights.contains(.laser) {
-            return laserConfig.laserMode == mode
+            return laserConfig.laser.mode == mode
         } else if selectedLights.contains(.movingHead) {
-            return laserConfig.mHMode == mode
+            return laserConfig.movingHead.mode == mode
         }
         return false
     }

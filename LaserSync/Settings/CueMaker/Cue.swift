@@ -12,37 +12,25 @@ struct Cue: Identifiable, Codable {
     var color: Color = .red
     var name: String = ""
     var type: CueType = .definitive
+    var affectedLights: Set<Light> = []
 
     // Laser
-    var includeLaser: Bool = false
+    var laser = LaserState()
     var laserSettings: Set<LightSettings> = []
-    var laserColor: LaserColor = .red
-    var laserBPMSyncModes: Set<BPMSyncMode> = []
-    var laserMode: LightMode = .blackout
-    var laserPattern: LaserPattern = .straight
-    var laserIncludedPatterns: Set<LaserPattern> = Set(LaserPattern.allCases)
 
     // Moving Head
-    var includeMovingHead: Bool = false
+    var movingHead = MovingHeadState()
     var movingHeadSettings: Set<LightSettings> = []
-    var movingHeadMode: LightMode = .blackout
-    var movingHeadColor: MovingHeadColor = .red
-    var movingHeadColorFrequency: Double = 0
-    var movingHeadStrobeFrequency: Double = 0
-    var movingHeadScene: MovingHeadScene = .off
-    var movingHeadBrightness: Double = 50
-    var movingHeadBreathe: Bool = false
-    var positionPreset: GyroPreset?
 }
 
 enum LightSettings: String, Codable, CaseIterable {
-    case mode
     case color
+    case strobe
     
     // Moving Head
     case scene
     case position
-    case strobe
+    case strobeSpeed
     case brightness
     
     // Laser
@@ -51,7 +39,7 @@ enum LightSettings: String, Codable, CaseIterable {
 
 extension Cue {
     static func preview() -> Cue {
-        let cue = Cue(includeLaser: true, laserMode: .auto, includeMovingHead: true, movingHeadMode: .auto)
+        let cue = Cue(name: "Test", affectedLights: [.laser, .movingHead], laser: LaserState(mode: .auto), movingHead: MovingHeadState(mode: .auto))
         return cue
     }
     
@@ -88,10 +76,10 @@ extension Cue {
     
     static func savePreviewCues() {
         let previewCues = [
-            Cue(color: .blue, name: "Laser Show", includeLaser: true, laserMode: .auto),
-            Cue(name: "Moving Head Rotation", includeMovingHead: true, movingHeadMode: .auto),
-            Cue(color: .orange, name: "Full Light Show", includeLaser: true, includeMovingHead: true),
-            Cue(color: .yellow, name: "Spotlight", includeLaser: false, includeMovingHead: true)
+            Cue(name: "Test", affectedLights: [.laser], laser: LaserState(mode: .auto)),
+            Cue(color: .blue, name: "Laser Show", affectedLights: [.laser], laser: LaserState(mode: .auto)),
+            Cue(color: .pink, name: "Moving Head Rotation", affectedLights: [.movingHead], movingHead: MovingHeadState(mode: .manual)),
+            Cue(color: .orange, name: "Full Light Show", affectedLights: [.laser, .movingHead], laser: LaserState(mode: .sound), movingHead: MovingHeadState(mode: .sound))
         ]
         
         let encoder = JSONEncoder()

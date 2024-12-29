@@ -8,6 +8,7 @@
 import SwiftUI
 
 struct PresetManagerView: View {
+    @EnvironmentObject private var laserConfig: LaserConfig
     @State private var presets: [GyroPreset] = []
     @State private var showingAlert = false
     @State private var newPresetName = ""
@@ -22,12 +23,17 @@ struct PresetManagerView: View {
                 Text("No presets")
             } else {
                 ForEach($presets) { $preset in
-                    VStack(alignment: .leading) {
-                        Text(preset.name)
-                            .font(.headline)
-                        Text("Pan: \(Int(preset.pan))°, Tilt: \(Int(preset.tilt))°")
-                            .font(.subheadline)
-                            .foregroundStyle(.gray)
+                    Button {
+                        laserConfig.sendGyroData(pan: preset.pan, tilt: preset.tilt)
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Text(preset.name)
+                                .font(.headline)
+                                .foregroundStyle(.white)
+                            Text("Pan: \(Int(preset.pan))°, Tilt: \(Int(preset.tilt))°")
+                                .font(.subheadline)
+                                .foregroundStyle(.gray)
+                        }
                     }
                     .swipeActions(edge: .trailing) {
                         Button(role: .destructive) {
@@ -94,5 +100,9 @@ struct PresetManagerView: View {
 #Preview {
     NavigationView {
         PresetManagerView()
+            .environmentObject(LaserConfig())
+            .onAppear {
+                GyroPreset.savePresets([GyroPreset(id: UUID(), name: "Test", pan: 1.5, tilt: 2.2)])
+            }
     }
 }

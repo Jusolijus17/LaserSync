@@ -22,14 +22,14 @@ struct LaserCueSetup: View {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                         ForEach(LightMode.allCases) { mode in
                             Button(action: {
-                                cue.laserMode = mode
+                                cue.laser.mode = mode
                             }) {
                                 Text(mode.rawValue.capitalized)
                                     .font(.title2)
                                     .fontWeight(.semibold)
                                     .frame(height: 50)
                                     .frame(maxWidth: .infinity)
-                                    .background(cue.laserMode == mode ? Color.green : Color.gray)
+                                    .background(cue.laser.mode == mode ? Color.green : Color.gray)
                                     .foregroundColor(.white)
                                     .cornerRadius(10)
                                     .shadow(radius: 5)
@@ -46,38 +46,38 @@ struct LaserCueSetup: View {
                                 ForEach(LaserColor.allCases) { laserColor in
                                     if laserColor != .multicolor {
                                         RoundedRectangle(cornerRadius: 10)
-                                            .fill(laserColor.color)
+                                            .fill(laserColor.colorValue)
                                             .frame(width: 50, height: 50)
                                             .overlay {
-                                                if cue.laserColor == laserColor {
+                                                if cue.laser.color == laserColor {
                                                     Image(systemName: "checkmark")
                                                         .fontWeight(.semibold)
                                                         .font(.title)
                                                 }
                                             }
                                             .onTapGesture {
-                                                cue.laserColor = laserColor
+                                                cue.laser.color = laserColor
                                             }
                                     } else {
                                         RoundedRectangle(cornerRadius: 10)
                                             .multicolor()
                                             .frame(width: 50, height: 50)
                                             .overlay {
-                                                if cue.laserColor == laserColor {
+                                                if cue.laser.color == laserColor {
                                                     Image(systemName: "checkmark")
                                                         .fontWeight(.semibold)
                                                         .font(.title)
                                                 }
                                             }
                                             .onTapGesture {
-                                                cue.laserColor = laserColor
+                                                cue.laser.color = laserColor
                                             }
                                     }
                                 }
                             }
                             .padding(.bottom)
                         }
-                        .disabledStyle(cue.laserBPMSyncModes.contains(.color) || !cue.laserSettings.contains(.color))
+                        .disabledStyle(cue.laser.bpmSyncModes.contains(.color) || !cue.laserSettings.contains(.color))
                         
                         Button {
                             toggleBpmSyncFor(.color)
@@ -86,7 +86,7 @@ struct LaserCueSetup: View {
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(cue.laserBPMSyncModes.contains(.color) ? Color.yellow : Color.gray)
+                                .background(cue.laser.bpmSyncModes.contains(.color) ? Color.yellow : Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
@@ -99,10 +99,10 @@ struct LaserCueSetup: View {
                         LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
                             ForEach(LaserPattern.allCases) { laserPattern in
                                 Button(action: {
-                                    if cue.laserBPMSyncModes.contains(.pattern) {
+                                    if cue.laser.bpmSyncModes.contains(.pattern) {
                                         togglePatternInclusion(laserPattern)
                                     } else {
-                                        cue.laserPattern = laserPattern
+                                        cue.laser.pattern = laserPattern
                                     }
                                 }) {
                                     laserPattern.shape
@@ -126,7 +126,7 @@ struct LaserCueSetup: View {
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(cue.laserBPMSyncModes.contains(.pattern) ? Color.yellow : Color.gray)
+                                .background(cue.laser.bpmSyncModes.contains(.pattern) ? Color.yellow : Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
@@ -134,7 +134,7 @@ struct LaserCueSetup: View {
                         .disabledStyle(!cue.laserSettings.contains(.pattern))
                         
                     }
-                    .disabledStyle(cue.laserMode != .manual)
+                    .disabledStyle(cue.laser.mode != .manual)
                 }
                 .padding()
                 .padding(.bottom, 65)
@@ -155,17 +155,17 @@ struct LaserCueSetup: View {
     }
     
     private func toggleBpmSyncFor(_ mode: BPMSyncMode) {
-        if !cue.laserBPMSyncModes.contains(mode) {
-            cue.laserBPMSyncModes.insert(mode)
+        if !cue.laser.bpmSyncModes.contains(mode) {
+            cue.laser.bpmSyncModes.insert(mode)
         } else {
-            cue.laserBPMSyncModes.remove(mode)
+            cue.laser.bpmSyncModes.remove(mode)
         }
     }
     
     func getBackgroundColor(_ pattern: LaserPattern) -> Color {
-        if cue.laserBPMSyncModes.contains(.pattern) && cue.laserIncludedPatterns.contains(pattern) {
+        if cue.laser.bpmSyncModes.contains(.pattern) && cue.laser.includedPatterns.contains(pattern) {
             return .green
-        } else if cue.laserPattern == pattern {
+        } else if cue.laser.pattern == pattern {
             return .green
         } else {
             return .gray
@@ -173,10 +173,10 @@ struct LaserCueSetup: View {
     }
     
     func togglePatternInclusion(_ pattern: LaserPattern) {
-        if cue.laserIncludedPatterns.contains(pattern) && cue.laserIncludedPatterns.count > 2 {
-            cue.laserIncludedPatterns.remove(pattern)
+        if cue.laser.includedPatterns.contains(pattern) && cue.laser.includedPatterns.count > 2 {
+            cue.laser.includedPatterns.remove(pattern)
         } else {
-            cue.laserIncludedPatterns.insert(pattern)
+            cue.laser.includedPatterns.insert(pattern)
         }
     }
 }
