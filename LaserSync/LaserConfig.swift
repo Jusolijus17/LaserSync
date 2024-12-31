@@ -10,12 +10,14 @@ import SwiftUI
 class LaserConfig: ObservableObject {
     @Published var laser = LaserState()
     @Published var movingHead = MovingHeadState()
+    @Published var spiderHead = SpiderHeadState()
     
     // Both
     @Published var bothColor: Color = .red
     @Published var includedLightsStrobe: Set<Light> = []
     private var previousLaserState: LaserState?
     private var previousMovingHeadState: MovingHeadState?
+    private var previousIncludedLightStrobe: Set<Light>?
     
     // Connection settings
     @Published var serverIp: String
@@ -218,11 +220,19 @@ class LaserConfig: ObservableObject {
     private func savePreviousState() {
         self.previousLaserState = self.laser
         self.previousMovingHeadState = self.movingHead
+        self.previousIncludedLightStrobe = self.includedLightsStrobe
     }
     
     private func restorePreviousState() {
         self.laser = self.previousLaserState ?? LaserState()
         self.movingHead = self.previousMovingHeadState ?? MovingHeadState()
+        self.includedLightsStrobe = self.previousIncludedLightStrobe ?? []
+        
+        if self.laser.bpmSyncModes.contains(.pattern) || self.laser.bpmSyncModes.contains(.color) {
+            self.startBpmSyncTimer()
+        } else {
+            self.stopBpmSyncTimer()
+        }
     }
     
     private func applyCue(_ cue: Cue?) {
@@ -238,6 +248,13 @@ class LaserConfig: ObservableObject {
                     self.stopBpmSyncTimer()
                 }
             }
+            if cue.laserSettings.contains(.strobe) {
+                if self.includedLightsStrobe.contains(.laser) && !cue.includedLightStrobe.contains(.laser) {
+                    self.includedLightsStrobe.remove(.laser)
+                } else if !self.includedLightsStrobe.contains(.laser) && cue.includedLightStrobe.contains(.laser) {
+                    self.includedLightsStrobe.insert(.laser)
+                }
+            }
         }
         
         print("Laser mode now : ", self.laser.mode)
@@ -245,6 +262,13 @@ class LaserConfig: ObservableObject {
         // Appliquer les réglages pour le moving head
         if cue.affectedLights.contains(.movingHead) {
             self.movingHead.merge(with: cue.movingHead, settings: cue.movingHeadSettings)
+            if cue.movingHeadSettings.contains(.strobe) {
+                if self.includedLightsStrobe.contains(.movingHead) && !cue.includedLightStrobe.contains(.movingHead) {
+                    self.includedLightsStrobe.remove(.movingHead)
+                } else if !self.includedLightsStrobe.contains(.movingHead) && cue.includedLightStrobe.contains(.movingHead) {
+                    self.includedLightsStrobe.insert(.movingHead)
+                }
+            }
         }
         
         print("Moving head mode now : ", self.movingHead.mode)
@@ -267,10 +291,8 @@ class LaserConfig: ObservableObject {
             case .movingHead:
                 self.movingHead.colorSpeed = 0
                 self.movingHead.color = MovingHeadColor.from(color: color)
-            case .both:
-                self.movingHead.colorSpeed = 0
-                self.laser.color = LaserColor.from(color: color)
-                self.movingHead.color = MovingHeadColor.from(color: color)
+            case .spiderHead:
+                self.spiderHead.color = SpiderHeadColor.from(color: color)
             default:
                 break
             }
@@ -278,10 +300,9 @@ class LaserConfig: ObservableObject {
         
         // Construction du corps de la requête
         let body: [[String: String]] = lights.map { light, color in
-            let colorName = (light == .laser && color == .clear) ? "multicolor" : color.name ?? "unknown"
             return [
                 "light": light.rawValue,
-                "color": colorName
+                "color": color.name ?? "red"
             ]
         }
         
@@ -343,6 +364,19 @@ class LaserConfig: ObservableObject {
     
     // MARK: - Mode control
     
+    func toggleSHMode(_ custom: LightMode? = nil) {
+        if let custom {
+            self.spiderHead.mode = custom
+        } else {
+            if self.spiderHead.mode == .manual {
+                self.spiderHead.mode = .sound
+            } else {
+                self.spiderHead.mode = .manual
+            }
+        }
+        self.setModeFor(.spiderHead, mode: self.spiderHead.mode)
+    }
+    
     func toggleMHMode(_ custom: LightMode? = nil) {
         if let custom {
             self.movingHead.mode = custom
@@ -353,10 +387,10 @@ class LaserConfig: ObservableObject {
                 self.movingHead.mode = .manual
             }
         }
-        setModeFor(.movingHead)
+        setModeFor(.movingHead, mode: self.movingHead.mode)
     }
     
-    func toggleMHScene(_ custom: MovingHeadScene? = nil) {
+    func toggleMHScene(_ custom: LightScene? = nil) {
         if let custom {
             self.movingHead.scene = custom
         } else {
@@ -371,7 +405,25 @@ class LaserConfig: ObservableObject {
                 self.movingHead.scene = .slow
             }
         }
-        setMHScene()
+        setSceneFor(.movingHead, scene: self.movingHead.scene)
+    }
+    
+    func toggleSHScene(_ custom: LightScene? = nil) {
+        if let custom {
+            self.spiderHead.scene = custom
+        } else {
+            switch self.spiderHead.scene {
+            case .slow:
+                self.spiderHead.scene = .medium
+            case .medium:
+                self.spiderHead.scene = .fast
+            case .fast:
+                self.spiderHead.scene = .off
+            case .off:
+                self.spiderHead.scene = .slow
+            }
+        }
+        setSceneFor(.spiderHead, scene: self.spiderHead.scene)
     }
     
     func turnOffMovingHead() {
@@ -382,25 +434,17 @@ class LaserConfig: ObservableObject {
         }
         self.movingHead.brightness = 0
         
-        self.setModeFor(.movingHead)
-        self.setMHScene()
-        self.setMHBrightness()
+        self.setModeFor(.movingHead, mode: self.movingHead.mode)
+        self.setSceneFor(.movingHead, scene: self.movingHead.scene)
+        self.setBrightnessFor(.movingHead, brightness: self.movingHead.brightness)
     }
     
-    func setModeFor(_ light: Light) {
+    func setModeFor(_ light: Light, mode: LightMode) {
         guard let url = URL(string: "\(self.baseUrl)/set_mode_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        var mode: String = ""
-        if light == .laser {
-            mode = self.laser.mode.rawValue
-        } else if light == .movingHead {
-            mode = self.movingHead.mode.rawValue
-        } else {
-            return
-        }
-        let body = ["mode": mode]
+        let body = ["mode": mode.rawValue]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -419,23 +463,23 @@ class LaserConfig: ObservableObject {
         }
     }
     
-    private func setMHScene() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_scene") else { return }
+    private func setSceneFor(_ light: Light, scene: LightScene) {
+        guard let url = URL(string: "\(self.baseUrl)/set_scene_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: String] = ["scene": self.movingHead.scene.rawValue]
+        let body: [String: String] = ["scene": scene.rawValue]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func setMHStrobe() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_strobe") else { return }
+    func setStrobeSpeedFor(_ light: Light, strobeSpeed: Double) {
+        guard let url = URL(string: "\(self.baseUrl)/set_strobe_speed_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Int] = ["value": Int(self.movingHead.strobeSpeed)]
+        let body: [String: Int] = ["value": Int(strobeSpeed)]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()
@@ -443,12 +487,12 @@ class LaserConfig: ObservableObject {
     
     // MARK: - MH Brightness control
     
-    func setMHBrightness() {
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_brightness") else { return }
+    func setBrightnessFor(_ light: Light, brightness: Double) {
+        guard let url = URL(string: "\(self.baseUrl)/set_brightness_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Int] = ["value": Int(self.movingHead.brightness)]
+        let body: [String: Int] = ["value": Int(brightness)]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()

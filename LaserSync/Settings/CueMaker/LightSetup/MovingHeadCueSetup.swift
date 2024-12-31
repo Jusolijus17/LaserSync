@@ -21,24 +21,8 @@ struct MovingHeadCueSetup: View {
                         .padding(.bottom)
                     
                     // Mode
-                    LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
-                        ForEach(LightMode.allCases) { mode in
-                            Button(action: {
-                                cue.movingHead.mode = mode
-                            }) {
-                                Text(mode.rawValue.capitalized)
-                                    .font(.title2)
-                                    .fontWeight(.semibold)
-                                    .frame(height: 50)
-                                    .frame(maxWidth: .infinity)
-                                    .background(cue.movingHead.mode == mode ? Color.green : Color.gray)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(10)
-                                    .shadow(radius: 5)
-                            }
-                        }
-                    }
-                    .padding(.bottom)
+                    ModeSelector(selectedMode: $cue.movingHead.mode)
+                        .padding(.bottom)
                     
                     Group {
                         // Scene
@@ -46,7 +30,7 @@ struct MovingHeadCueSetup: View {
                             SettingToggle(settings: $cue.movingHeadSettings, setting: .scene, label: "Set Scene")
                             
                             LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 2)) {
-                                ForEach(MovingHeadScene.allCases.reversed()) { scene in
+                                ForEach(LightScene.allCases.reversed()) { scene in
                                     Button(action: {
                                         cue.movingHead.positionPreset = nil
                                         cue.movingHead.scene = scene
@@ -106,7 +90,7 @@ struct MovingHeadCueSetup: View {
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.position))
                         }
-                        .disabledStyle(cue.movingHead.scene != .off)
+                        .disabledStyle(cue.movingHeadSettings.contains(.scene))
                         
                         // Color
                         SettingToggle(settings: $cue.movingHeadSettings, setting: .color, label: "Set Color")
@@ -140,21 +124,44 @@ struct MovingHeadCueSetup: View {
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.color))
                         
-                        // Strobe
-                        SettingToggle(settings: $cue.movingHeadSettings, setting: .strobeSpeed, label: "Set Strobe")
+                        // Strobe Speed
+                        SettingToggle(settings: $cue.movingHeadSettings, setting: .strobeSpeed, label: "Set Strobe Speed")
                         
                         CustomSliderView(sliderValue: $cue.movingHead.strobeSpeed, title: "Intensity")
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.strobeSpeed))
                         
+                        // Strobe
+                        SettingToggle(settings: $cue.movingHeadSettings, setting: .strobe, label: "Set Strobe")
+                        
+                        Button {
+                            toggleStrobeMode()
+                        } label: {
+                            Label("Strobe", systemImage: "circle.dotted.circle")
+                                .font(.headline)
+                                .frame(maxWidth: .infinity)
+                                .padding()
+                                .background(cue.includedLightStrobe.contains(.movingHead) ? Color.yellow : Color.gray)
+                                .foregroundColor(.white)
+                                .cornerRadius(10)
+                        }
+                        .padding(.bottom)
+                        .disabledStyle(!cue.movingHeadSettings.contains(.strobe))
+                        
                         // Brightness
                         SettingToggle(settings: $cue.movingHeadSettings, setting: .brightness, label: "Set Brightness")
+                            .onChange(of: cue.movingHeadSettings) { _, newValue in
+                                if newValue.contains(.strobe) {
+                                    cue.movingHead.breathe = false
+                                }
+                            }
                         
                         CustomSliderView(sliderValue: $cue.movingHead.brightness, title: "Brightness")
                             .padding(.bottom)
                             .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
                             .disabledStyle(cue.movingHead.breathe)
                         
+                        // Breathe
                         Button {
                             cue.movingHead.breathe.toggle()
                         } label: {
@@ -167,7 +174,7 @@ struct MovingHeadCueSetup: View {
                                 .cornerRadius(10)
                         }
                         .padding(.bottom)
-                        .disabledStyle(!cue.movingHeadSettings.contains(.brightness))
+                        .disabledStyle(!cue.movingHeadSettings.contains(.brightness) || cue.movingHeadSettings.contains(.strobe))
                     }
                     .disabledStyle(cue.movingHead.mode != .manual)
                 }
@@ -189,7 +196,15 @@ struct MovingHeadCueSetup: View {
         }
     }
     
-    func getBackgroundColor(_ scene: MovingHeadScene) -> Color {
+    private func toggleStrobeMode() {
+        if cue.includedLightStrobe.contains(.movingHead) {
+            cue.includedLightStrobe.remove(.movingHead)
+        } else {
+            cue.includedLightStrobe.insert(.movingHead)
+        }
+    }
+    
+    private func getBackgroundColor(_ scene: LightScene) -> Color {
         if cue.movingHead.scene != scene {
             return .gray
         }
@@ -202,14 +217,6 @@ struct MovingHeadCueSetup: View {
             return .red
         case .off:
             return .blue
-        }
-    }
-    
-    func togglePatternInclusion(_ pattern: LaserPattern) {
-        if cue.laser.includedPatterns.contains(pattern) && cue.laser.includedPatterns.count > 1 {
-            cue.laser.includedPatterns.remove(pattern)
-        } else {
-            cue.laser.includedPatterns.insert(pattern)
         }
     }
 }

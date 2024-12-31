@@ -11,7 +11,8 @@ import SwiftUI
 enum Light: String, Codable, CaseIterable, Identifiable {
     case laser
     case movingHead
-    case both
+    case spiderHead
+    case all
     case none
     
     var id: String { rawValue }
@@ -35,7 +36,7 @@ enum CueType: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-enum MovingHeadScene: String, Codable, CaseIterable, Identifiable {
+enum LightScene: String, Codable, CaseIterable, Identifiable {
     case slow
     case medium
     case fast
@@ -46,29 +47,32 @@ enum MovingHeadScene: String, Codable, CaseIterable, Identifiable {
 
 protocol LightColors: Codable, Identifiable, CaseIterable {
     var id: String { get }
+    var colorValue: Color { get }
 }
 
-enum CommonColor: String, LightColors {
+enum SpiderHeadColor: String, LightColors {
+    case multicolor
     case red
     case blue
     case green
-    case pink
-    case cyan
-    case yellow
+    case white
     
     var id: String { return self.rawValue }
 }
 
-extension CommonColor {
-    var color: Color {
+extension SpiderHeadColor {
+    var colorValue: Color {
         switch self {
+        case .multicolor: return .clear
         case .red: return .red
         case .blue: return .blue
         case .green: return .green
-        case .pink: return .pink
-        case .cyan: return .cyan
-        case .yellow: return .yellow
+        case .white: return .white
         }
+    }
+    
+    static func from(color: Color) -> SpiderHeadColor {
+        return SpiderHeadColor.allCases.first(where: { $0.colorValue == color }) ?? .red
     }
 }
 

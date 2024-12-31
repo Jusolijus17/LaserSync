@@ -21,9 +21,13 @@ struct Cue: Identifiable, Codable {
     // Moving Head
     var movingHead = MovingHeadState()
     var movingHeadSettings: Set<LightSettings> = []
+    
+    // All
+    var includedLightStrobe: Set<Light> = []
 }
 
 enum LightSettings: String, Codable, CaseIterable {
+    // All
     case color
     case strobe
     
@@ -35,6 +39,9 @@ enum LightSettings: String, Codable, CaseIterable {
     
     // Laser
     case pattern
+    case vAdjust
+    case hAnimation
+    case vAnimation
 }
 
 extension Cue {

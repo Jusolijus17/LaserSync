@@ -14,7 +14,7 @@ struct ColorSelectionView: View {
 
     var body: some View {
         VStack {
-            LightImage(light: .both, selectable: true, selection: $activeLights)
+            LightImage(light: .all, selectable: true, selection: $activeLights)
             
             Spacer()
             
@@ -64,7 +64,7 @@ struct ColorSelectionView: View {
                 return Set(laserColors()) // Transformé en Set pour les opérations d'interception
             case .movingHead:
                 return Set(movingHeadColor())
-            case .both:
+            case .all:
                 return Set(laserColors() + movingHeadColor())
             default: return []
             }
@@ -161,7 +161,7 @@ struct LightImage: View {
     var body: some View {
         HStack {
             Group {
-                if light == .both {
+                if light == .all {
                     Image("laser_icon")
                         .resizable()
                         .scaledToFit()
@@ -208,7 +208,7 @@ struct LightImage: View {
 
     private func getLightImage() -> String {
         switch light {
-        case .both: return "moving_head_icon"
+        case .all: return "moving_head_icon"
         case .laser: return "laser_icon"
         case .movingHead: return "moving_head_icon"
         default: return ""

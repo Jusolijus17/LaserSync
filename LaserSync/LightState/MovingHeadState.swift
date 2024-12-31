@@ -10,7 +10,7 @@ import SwiftUI
 struct MovingHeadState: Codable {
     var color: MovingHeadColor = .red
     var mode: LightMode = .blackout
-    var scene: MovingHeadScene = .off
+    var scene: LightScene = .off
     var brightness: Double = 0
     var breathe: Bool = false
     var strobeSpeed: Double = 0

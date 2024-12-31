@@ -1,5 +1,5 @@
 //
-//  MovingHeadHomePage.swift
+//  SpiderLightPage.swift
 //  LaserSync
 //
 //  Created by Justin Lefrançois on 2024-12-28.
@@ -7,14 +7,13 @@
 
 import SwiftUI
 
-struct MovingHeadHomePage: View {
-    @EnvironmentObject private var homeController: HomeController
+struct SpiderHeadHomePage: View {
     @EnvironmentObject private var laserConfig: LaserConfig
-    @State private var isAnimatingBreathe = false
+    @EnvironmentObject private var homeController: HomeController
     
     var body: some View {
         VStack(spacing: 20) {
-            Text("Moving Head")
+            Text("Spider Head")
                 .foregroundStyle(.white)
                 .font(.title2)
                 .padding(.horizontal, 10)
@@ -28,23 +27,23 @@ struct MovingHeadHomePage: View {
                 // Color
                 Button(action: {
                     hapticFeedback()
-                    homeController.changeMHColor()
+                    homeController.changeSHColor()
                 }) {
                     Rectangle()
-                        .fill(laserConfig.movingHead.color.colorValue)
+                        .fill(laserConfig.spiderHead.color.colorValue)
                         .frame(height: 150)
                         .background {
-                            if laserConfig.movingHead.color.colorValue == .clear {
+                            if laserConfig.spiderHead.color.colorValue == .clear {
                                 RoundedRectangle(cornerRadius: 10)
                                     .multicolor()
                             }
                         }
                         .overlay(content: {
                             ZStack {
-                                Text(laserConfig.movingHead.color.rawValue.capitalized)
+                                Text(laserConfig.spiderHead.color.rawValue.capitalized)
                                     .font(.title2)
                                     .fontWeight(.semibold)
-                                    .foregroundStyle(laserConfig.movingHead.color == .white ? .black : .white)
+                                    .foregroundStyle(laserConfig.spiderHead.color == .white ? .black : .white)
                                 VStack {
                                     Spacer()
                                     Text("Color")
@@ -59,77 +58,77 @@ struct MovingHeadHomePage: View {
                 }
                   
                 // Breathe
-                SquareButton(title: "Breathe", action: {
-                    print("Touch")
-                    laserConfig.toggleMhBreathe()
-                }, backgroundColor: (isAnimatingBreathe ? Color.yellow : Color.gray), content: {
-                    Image(systemName: "wave.3.up")
-                        .font(.largeTitle)
-                })
-                .animation(Animation.linear(duration: 0.7).repeat(while: isAnimatingBreathe))
-                .onChange(of: laserConfig.movingHead.breathe) { _, newValue in
-                    print(newValue)
-                    self.isAnimatingBreathe = newValue
-                }
+//                SquareButton(title: "Breathe", action: {
+//                    print("Touch")
+//                    laserConfig.toggleMhBreathe()
+//                }, backgroundColor: (isAnimatingBreathe ? Color.yellow : Color.gray), content: {
+//                    Image(systemName: "wave.3.up")
+//                        .font(.largeTitle)
+//                })
+//                .animation(Animation.linear(duration: 0.7).repeat(while: isAnimatingBreathe))
+//                .onChange(of: laserConfig.spiderHead.breathe) { _, newValue in
+//                    print(newValue)
+//                    self.isAnimatingBreathe = newValue
+//                }
                 
                 // Mode
                 SquareButton(title: "Mode", action: {
-                    laserConfig.toggleMHMode()
+                    laserConfig.toggleSHMode()
                 }, backgroundColor: {
-                    if laserConfig.movingHead.mode == .blackout {
+                    if laserConfig.spiderHead.mode == .blackout {
                         return Color.gray
-                    } else if laserConfig.movingHead.mode == .sound {
+                    } else if laserConfig.spiderHead.mode == .sound {
                         return Color.green
                     } else {
                         return Color.yellow
                     }
                 }()) {
-                    Text(laserConfig.movingHead.mode.rawValue.capitalized)
+                    Text(laserConfig.spiderHead.mode.rawValue.capitalized)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
                 }
                 .onLongPressGesture {
                     hapticFeedback()
-                    laserConfig.turnOffMovingHead()
+                    laserConfig.spiderHead.mode = .blackout
+                    laserConfig.setModeFor(.spiderHead, mode: .blackout)
                 }
                 
                 // Scene
                 SquareButton(title: "Scene", action: {
-                    laserConfig.toggleMHScene()
+                    laserConfig.toggleSHScene()
                 }, backgroundColor: {
-                    if laserConfig.movingHead.scene == .slow {
+                    if laserConfig.spiderHead.scene == .slow {
                         return .blue
-                    } else if laserConfig.movingHead.scene == .medium {
+                    } else if laserConfig.spiderHead.scene == .medium {
                         return .orange
-                    } else if laserConfig.movingHead.scene == .fast {
+                    } else if laserConfig.spiderHead.scene == .fast {
                         return .red
                     }
                     return .gray
                 }()) {
-                    Text(laserConfig.movingHead.scene.rawValue.capitalized)
+                    Text(laserConfig.spiderHead.scene.rawValue.capitalized)
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
                 }
                 .onLongPressGesture {
                     hapticFeedback()
-                    laserConfig.toggleMHScene(.off)
+                    laserConfig.toggleSHScene(.off)
                 }
             }
             
-            CustomSliderView(sliderValue: $laserConfig.movingHead.brightness, title: "Brightness", onValueChange: { newValue in
+            CustomSliderView(sliderValue: $laserConfig.spiderHead.brightness, title: "Brightness", onValueChange: { newValue in
                 if newValue > 0 {
-                    laserConfig.movingHead.mode = .manual
+                    laserConfig.spiderHead.mode = .manual
                 } else {
-                    laserConfig.movingHead.mode = .blackout
-                    laserConfig.movingHead.breathe = false
+                    laserConfig.spiderHead.mode = .blackout
                 }
-                laserConfig.setBrightnessFor(.movingHead, brightness: laserConfig.movingHead.brightness)
+                laserConfig.setBrightnessFor(.spiderHead, brightness: laserConfig.spiderHead.brightness)
             })
             
-            CustomSliderView(sliderValue: $laserConfig.movingHead.strobeSpeed, title: "Strobe", onValueChange: { _ in
-                laserConfig.setStrobeSpeedFor(.movingHead, strobeSpeed: laserConfig.movingHead.strobeSpeed)
+            CustomSliderView(sliderValue: $laserConfig.spiderHead.strobeSpeed, title: "Strobe", onValueChange: { _ in
+                laserConfig.setStrobeSpeedFor(.spiderHead, strobeSpeed: laserConfig.spiderHead.strobeSpeed)
             })
         }
         .padding(.horizontal, 20)
@@ -139,4 +138,22 @@ struct MovingHeadHomePage: View {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
     }
+}
+
+struct SpiderHomePage_Previews: View {
+    @StateObject private var homeController = HomeController()
+    @StateObject private var laserConfig = LaserConfig()
+    
+    var body: some View {
+        SpiderHeadHomePage()
+            .environmentObject(homeController)
+            .environmentObject(laserConfig)
+            .onAppear {
+                homeController.setLaserConfig(laserConfig)
+            }
+    }
+}
+
+#Preview {
+    SpiderHomePage_Previews()
 }

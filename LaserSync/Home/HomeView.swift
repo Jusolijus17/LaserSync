@@ -82,6 +82,7 @@ struct HomeView: View {
             TabView {
                 LaserHomePage()
                 MovingHeadHomePage()
+                SpiderHeadHomePage()
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .environmentObject(homeController)

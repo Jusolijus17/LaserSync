@@ -32,6 +32,14 @@ extension LaserState {
             case .color:
                 self.color = other.color
                 updateBpmSyncModes(for: .color, from: other.bpmSyncModes)
+            case .vAdjust:
+                self.verticalAdjust = other.verticalAdjust
+            case .hAnimation:
+                self.horizontalAnimationEnabled = other.horizontalAnimationEnabled
+                self.horizontalAnimationSpeed = other.horizontalAnimationSpeed
+            case .vAnimation:
+                self.verticalAnimationEnabled = other.verticalAnimationEnabled
+                self.verticalAnimationSpeed = other.verticalAnimationSpeed
             default:
                 break
             }

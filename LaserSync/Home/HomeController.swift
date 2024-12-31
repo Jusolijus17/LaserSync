@@ -99,6 +99,16 @@ class HomeController: ObservableObject {
         laserConfig.movingHead.color = nextColor!
         laserConfig.changeColor(lights: [.movingHead : laserConfig.movingHead.color.colorValue])
     }
+    
+    func changeSHColor() {
+        guard let laserConfig else { return }
+        var nextColor: SpiderHeadColor? = laserConfig.spiderHead.color
+        repeat {
+            nextColor = SpiderHeadColor.allCases.randomElement()
+        } while nextColor == laserConfig.spiderHead.color || nextColor == nil
+        laserConfig.spiderHead.color = nextColor!
+        laserConfig.changeColor(lights: [.spiderHead : laserConfig.spiderHead.color.colorValue])
+    }
 
     func changePattern() {
         guard let laserConfig else { return }

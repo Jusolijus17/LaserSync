@@ -73,6 +73,7 @@ extension Color: Codable {
         case "white": self = .white
         case "purple": self = .purple
         case "gray": self = .gray
+        case "multicolor": self = .clear
         default: self = .clear // Valeur par défaut pour les couleurs inconnues
         }
     }
@@ -91,6 +92,7 @@ extension Color {
         case Color.white: return "white"
         case Color.purple: return "purple"
         case Color.gray: return "gray"
+        case Color.clear: return "multicolor"
         default: return nil
         }
     }

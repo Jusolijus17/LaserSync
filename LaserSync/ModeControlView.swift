@@ -16,7 +16,7 @@ struct ModeControlView: View {
             
             Spacer()
             
-            LightImage(light: .both, selectable: true, selection: $selectedLights)
+            LightImage(light: .all, selectable: true, selection: $selectedLights)
             
             Spacer()
             
@@ -61,14 +61,14 @@ struct ModeControlView: View {
     func change(_ mode: LightMode) {
         if selectedLights.contains(.laser) {
             laserConfig.laser.mode = mode
-            laserConfig.setModeFor(.laser)
+            laserConfig.setModeFor(.laser, mode: mode)
         }
         if selectedLights.contains(.movingHead) {
             if mode == .blackout {
                 laserConfig.turnOffMovingHead()
             } else {
                 laserConfig.movingHead.mode = mode
-                laserConfig.setModeFor(.movingHead)
+                laserConfig.setModeFor(.movingHead, mode: mode)
             }
             
         }
