@@ -16,7 +16,7 @@ struct ModeControlView: View {
             
             Spacer()
             
-            LightImage(light: .all, selectable: true, selection: $selectedLights)
+            LightImage(light: .all, width: 100, height: 100, selectable: true, selection: $selectedLights)
             
             Spacer()
             
@@ -75,6 +75,10 @@ struct ModeControlView: View {
         if selectedLights.contains(.spiderHead) {
             laserConfig.spiderHead.mode = mode
             laserConfig.setModeFor(.spiderHead, mode: mode)
+        }
+        if selectedLights.contains(.strobe) {
+            laserConfig.rfStrobe.mode = mode
+            laserConfig.setModeFor(.strobe, mode: mode)
         }
     }
     

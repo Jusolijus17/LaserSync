@@ -17,7 +17,7 @@ struct MovingHeadSettings: View {
                 NavigationLink(destination: GyroControlView().environmentObject(motionManager)) {
                     Text("Gyro control")
                 }
-                NavigationLink(destination: PrecisionControlView()) {
+                NavigationLink(destination: MhPrecisionControlView()) {
                     Text("Precision control")
                 }
             }
@@ -25,6 +25,19 @@ struct MovingHeadSettings: View {
                 NavigationLink(destination: PresetManagerView()) {
                     Text("Preset manager")
                 }
+                NavigationLink {
+                    Form {
+                        Toggle(isOn: $laserConfig.mHSceneGoboSwitch) {
+                            Text("Gobo switch")
+                        }
+                        .onChange(of: laserConfig.mHSceneGoboSwitch) {
+                            laserConfig.setMhSceneGoboSwitch()
+                        }
+                    }
+                } label: {
+                    Text("Scenes")
+                }
+
             }
         }
         .navigationTitle("Moving Head")

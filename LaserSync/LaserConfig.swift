@@ -11,6 +11,7 @@ class LaserConfig: ObservableObject {
     @Published var laser = LaserState()
     @Published var movingHead = MovingHeadState()
     @Published var spiderHead = SpiderHeadState()
+    @Published var rfStrobe = RFStrobeState()
     
     // All
     @Published var bothColor: Color = .red
@@ -36,6 +37,7 @@ class LaserConfig: ObservableObject {
     private var bpmUpdateTask: Task<Void, Never>?
     @Published var networkErrorCount: Int = 0
     @Published var successfullBpmFetch: Bool = false
+    @Published var mHSceneGoboSwitch: Bool = true
     
     // Computed vars
     var baseUrl: String {
@@ -306,6 +308,8 @@ class LaserConfig: ObservableObject {
                 self.movingHead.color = MovingHeadColor.from(color: color)
             case .spiderHead:
                 self.spiderHead.color = SpiderHeadColor.from(color: color)
+            case .strobe:
+                self.rfStrobe.color = StrobeColor.from(color: color)
             default:
                 break
             }
@@ -409,6 +413,61 @@ class LaserConfig: ObservableObject {
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         let body = ["gobo": self.movingHead.gobo]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func setMhSceneGoboSwitch() {
+        guard let url = URL(string: "\(self.baseUrl)/set_mh_scene_gobo_switch") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["isOn": self.mHSceneGoboSwitch]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    // MARK: - RF Devices
+    
+    func setRfStrobeOnOff(isOn: Bool) {
+        guard let url = URL(string: "\(self.baseUrl)/set_rf_strobe_on_off") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["isOn": isOn]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func setRfStrobeSpeedFasterSlower(faster: Bool) {
+        guard let url = URL(string: "\(self.baseUrl)/set_rf_strobe_speed") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["faster": faster]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func rfStrobeReset() {
+        guard let url = URL(string: "\(self.baseUrl)/rf_strobe_reset") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    func setSmokeOnOff(isOn: Bool) {
+        guard let url = URL(string: "\(self.baseUrl)/set_smoke_on_off") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["isOn": isOn]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()

@@ -53,6 +53,11 @@ struct ColorSelectionView: View {
                         laserConfig.changeColor(lights: [.spiderHead: .clear])
                     }
                     .padding([.horizontal, .top], 20)
+                } else if activeLights.contains(.strobe) {
+                    MulticolorButton(isSelected: laserConfig.rfStrobe.color.colorValue == .clear) {
+                        laserConfig.changeColor(lights: [.strobe: .clear])
+                    }
+                    .padding([.horizontal, .top], 20)
                 }
             }
         }
@@ -77,6 +82,8 @@ struct ColorSelectionView: View {
                 return Set(movingHeadColor())
             case .spiderHead:
                 return Set(spiderHeadColor())
+            case .strobe:
+                return Set(strobeColor())
             default: return []
             }
         }
@@ -101,6 +108,12 @@ struct ColorSelectionView: View {
     
     private func spiderHeadColor() -> [Color] {
         return SpiderHeadColor.allCases
+            .filter { $0.colorValue != .clear }
+            .map { $0.colorValue }
+    }
+    
+    private func strobeColor() -> [Color] {
+        return StrobeColor.allCases
             .filter { $0.colorValue != .clear }
             .map { $0.colorValue }
     }
@@ -180,13 +193,15 @@ struct LightImage: View {
     }
     
     var body: some View {
-        HStack {
+        LazyHGrid(
+            rows: Array(repeating: GridItem(.flexible(minimum: 25, maximum: height)), count: 2)
+        ) {
             ForEach(lightsToDisplay, id: \.self) { subLight in
                 Image(imageName(for: subLight))
                     .resizable()
                     .scaledToFit()
-                    .frame(width: width, height: height)
                     .padding()
+                    .frame(minWidth: 25, idealWidth: width, maxWidth: width, minHeight: 25, idealHeight: height, maxHeight: height, alignment: .center)
                     .background {
                         RoundedRectangle(cornerRadius: 20)
                             .fill(selection.contains(subLight)
@@ -205,10 +220,12 @@ struct LightImage: View {
                     }
             }
         }
+        .frame(maxHeight: height * 2)
+        .padding()
     }
     
     private var lightsToDisplay: [Light] {
-        light == .all ? [.laser, .movingHead, .spiderHead] : [light]
+        light == .all ? [.laser, .movingHead, .spiderHead, .strobe] : [light]
     }
     
     private func imageName(for light: Light) -> String {
@@ -219,7 +236,10 @@ struct LightImage: View {
             return "moving_head_icon"
         case .spiderHead:
             return "spider_head_icon"
-        default: return ""
+        case .strobe:
+            return "rf_strobe_icon"
+        default:
+            return ""
         }
     }
     

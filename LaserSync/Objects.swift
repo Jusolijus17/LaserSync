@@ -12,14 +12,11 @@ enum Light: String, Codable, CaseIterable, Identifiable {
     case laser
     case movingHead
     case spiderHead
+    case strobe
     case all
     case none
     
     var id: String { rawValue }
-    
-    static var displayableCases: [Light] {
-        return [.laser, .movingHead]
-    }
 }
 
 enum CueMakerStep {
@@ -49,6 +46,38 @@ enum LightScene: String, Codable, CaseIterable, Identifiable {
 protocol LightColors: Codable, Identifiable, CaseIterable, Hashable {
     var id: String { get }
     var colorValue: Color { get }
+}
+
+enum StrobeColor: String, LightColors {
+    case multicolor
+    case red
+    case green
+    case white
+    case yellow
+    case pink
+    case purple
+    case blue
+    
+    var id: String { return self.rawValue }
+}
+
+extension StrobeColor {
+    var colorValue: Color {
+        switch self {
+        case .multicolor: return .clear
+        case .red: return .red
+        case .blue: return .blue
+        case .green: return .green
+        case .white: return .white
+        case .yellow: return .yellow
+        case .pink: return .pink
+        case .purple: return .purple
+        }
+    }
+    
+    static func from(color: Color) -> StrobeColor {
+        return StrobeColor.allCases.first(where: { $0.colorValue == color }) ?? .red
+    }
 }
 
 enum SpiderHeadColor: String, LightColors {
