@@ -140,3 +140,18 @@ extension Set where Element == Light {
         )
     }
 }
+
+extension LaserConfig {
+    func mode(for light: Light) -> LightMode? {
+        switch light {
+        case .laser:
+            return laser.mode
+        case .movingHead:
+            return movingHead.mode
+        case .spiderHead:
+            return spiderHead.mode // Assurez-vous que cette propriété existe
+        default:
+            return nil
+        }
+    }
+}

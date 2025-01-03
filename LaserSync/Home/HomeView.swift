@@ -83,6 +83,7 @@ struct HomeView: View {
                 LaserHomePage()
                 MovingHeadHomePage()
                 SpiderHeadHomePage()
+                MasterSliderPage()
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .environmentObject(homeController)

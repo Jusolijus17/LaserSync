@@ -9,10 +9,10 @@ import SwiftUI
 
 struct MovingHeadState: Codable {
     var color: MovingHeadColor = .red
+    var gobo: Int = 0
     var mode: LightMode = .blackout
     var scene: LightScene = .off
     var brightness: Double = 0
-    var breathe: Bool = false
     var strobeSpeed: Double = 0
     var colorSpeed: Double = 0
     var positionPreset: GyroPreset? = nil
@@ -26,6 +26,9 @@ extension MovingHeadState {
             case .color:
                 self.color = other.color
                 self.colorSpeed = other.colorSpeed
+                
+            case .gobo:
+                self.gobo = other.gobo
 
             case .scene:
                 self.scene = other.scene
@@ -39,7 +42,6 @@ extension MovingHeadState {
 
             case .brightness:
                 self.brightness = other.brightness
-                self.breathe = other.breathe
 
             default:
                 break // Ignorer les réglages non pertinents au moving head

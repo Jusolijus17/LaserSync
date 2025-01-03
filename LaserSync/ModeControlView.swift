@@ -72,32 +72,30 @@ struct ModeControlView: View {
             }
             
         }
+        if selectedLights.contains(.spiderHead) {
+            laserConfig.spiderHead.mode = mode
+            laserConfig.setModeFor(.spiderHead, mode: mode)
+        }
     }
     
     func toggleStrobeMode() {
+        let shouldActivateStrobe = selectedLights.contains { !laserConfig.includedLightsStrobe.contains($0) }
         for light in selectedLights {
-            if laserConfig.includedLightsStrobe.contains(light) {
-                laserConfig.includedLightsStrobe.remove(light)
-            } else {
+            if shouldActivateStrobe {
                 laserConfig.includedLightsStrobe.insert(light)
+            } else {
+                laserConfig.includedLightsStrobe.remove(light)
             }
         }
         laserConfig.setStrobeMode()
     }
     
     private func isModeEnabled(mode: LightMode) -> Bool {
-        if selectedLights.contains(.movingHead) && selectedLights.contains(.laser) {
-            if laserConfig.laser.mode == laserConfig.movingHead.mode {
-                return laserConfig.laser.mode == mode
-            } else {
-                return false
-            }
-        } else if selectedLights.contains(.laser) {
-            return laserConfig.laser.mode == mode
-        } else if selectedLights.contains(.movingHead) {
-            return laserConfig.movingHead.mode == mode
+        guard !selectedLights.isEmpty else { return false }
+        let selectedLightsModes = selectedLights.map { light in
+            laserConfig.mode(for: light)
         }
-        return false
+        return selectedLightsModes.allSatisfy { $0 == mode }
     }
     
     private func isStrobeActive() -> Bool {

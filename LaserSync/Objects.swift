@@ -26,6 +26,7 @@ enum CueMakerStep {
     case selectLights
     case laserSettings
     case movingHeadSettings
+    case spiderHeadSettings
     case summary
 }
 
@@ -45,7 +46,7 @@ enum LightScene: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-protocol LightColors: Codable, Identifiable, CaseIterable {
+protocol LightColors: Codable, Identifiable, CaseIterable, Hashable {
     var id: String { get }
     var colorValue: Color { get }
 }

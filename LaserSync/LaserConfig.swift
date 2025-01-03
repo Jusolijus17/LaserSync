@@ -12,9 +12,11 @@ class LaserConfig: ObservableObject {
     @Published var movingHead = MovingHeadState()
     @Published var spiderHead = SpiderHeadState()
     
-    // Both
+    // All
     @Published var bothColor: Color = .red
     @Published var includedLightsStrobe: Set<Light> = []
+    @Published var includedLightsBreathe: Set<Light> = []
+    @Published var masterSliderValue: Double = 0
     private var previousLaserState: LaserState?
     private var previousMovingHeadState: MovingHeadState?
     private var previousIncludedLightStrobe: Set<Light>?
@@ -164,6 +166,17 @@ class LaserConfig: ObservableObject {
         return Int(bpm.rounded())
     }
     
+    func setMasterSliderValue(_ value: Double) {
+        guard let url = URL(string: "\(self.baseUrl)/set_master_slider_value") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["value": Int(self.masterSliderValue)]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
     // MARK: - CUE settings
     
     func setCue(_ cue: Cue) {
@@ -249,9 +262,9 @@ class LaserConfig: ObservableObject {
                 }
             }
             if cue.laserSettings.contains(.strobe) {
-                if self.includedLightsStrobe.contains(.laser) && !cue.includedLightStrobe.contains(.laser) {
+                if self.includedLightsStrobe.contains(.laser) && !cue.includedLightsStrobe.contains(.laser) {
                     self.includedLightsStrobe.remove(.laser)
-                } else if !self.includedLightsStrobe.contains(.laser) && cue.includedLightStrobe.contains(.laser) {
+                } else if !self.includedLightsStrobe.contains(.laser) && cue.includedLightsStrobe.contains(.laser) {
                     self.includedLightsStrobe.insert(.laser)
                 }
             }
@@ -263,9 +276,9 @@ class LaserConfig: ObservableObject {
         if cue.affectedLights.contains(.movingHead) {
             self.movingHead.merge(with: cue.movingHead, settings: cue.movingHeadSettings)
             if cue.movingHeadSettings.contains(.strobe) {
-                if self.includedLightsStrobe.contains(.movingHead) && !cue.includedLightStrobe.contains(.movingHead) {
+                if self.includedLightsStrobe.contains(.movingHead) && !cue.includedLightsStrobe.contains(.movingHead) {
                     self.includedLightsStrobe.remove(.movingHead)
-                } else if !self.includedLightsStrobe.contains(.movingHead) && cue.includedLightStrobe.contains(.movingHead) {
+                } else if !self.includedLightsStrobe.contains(.movingHead) && cue.includedLightsStrobe.contains(.movingHead) {
                     self.includedLightsStrobe.insert(.movingHead)
                 }
             }
@@ -324,6 +337,27 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
+    func setSHLedSelection(leds: [LEDCell]) {
+        guard let url = URL(string: "\(self.baseUrl)/set_sh_led_selection") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        
+        let ledsArray = leds.map { led -> [String: Any] in
+            let colorName: String = led.color.name ?? ""
+                return [
+                    "id": led.id,
+                    "color": colorName,
+                    "isOn": led.isOn,
+                    "side": led.side
+                ]
+            }
+        
+        request.httpBody = try? JSONSerialization.data(withJSONObject: ledsArray, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
     // MARK: - Pattern control
     
     func setPattern() {
@@ -359,6 +393,24 @@ class LaserConfig: ObservableObject {
             print("Erreur lors de la sérialisation JSON : \(error)")
             return
         }
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
+    // MARK: - Gobo control
+    
+    func toggleMhGobo() {
+        self.movingHead.gobo = (self.movingHead.gobo + 1) % 8
+        self.setMhGobo()
+    }
+    
+    func setMhGobo() {
+        guard let url = URL(string: "\(self.baseUrl)/set_mh_gobo") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["gobo": self.movingHead.gobo]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
         URLSession.shared.dataTask(with: request).resume()
     }
     
@@ -429,14 +481,15 @@ class LaserConfig: ObservableObject {
     func turnOffMovingHead() {
         self.movingHead.mode = .blackout
         self.movingHead.scene = .off
-        if self.movingHead.breathe {
-            self.toggleMhBreathe()
+        if self.includedLightsBreathe.contains(.movingHead) {
+            self.includedLightsBreathe.remove(.movingHead)
         }
         self.movingHead.brightness = 0
         
         self.setModeFor(.movingHead, mode: self.movingHead.mode)
         self.setSceneFor(.movingHead, scene: self.movingHead.scene)
         self.setBrightnessFor(.movingHead, brightness: self.movingHead.brightness)
+        self.setBreatheMode()
     }
     
     func setModeFor(_ light: Light, mode: LightMode) {
@@ -451,16 +504,15 @@ class LaserConfig: ObservableObject {
     }
     
     func setStrobeMode() {
-        for light in Light.allCases {
-            guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode_for/\(light)") else { return }
-            var request = URLRequest(url: url)
-            request.httpMethod = "POST"
-            request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-            let body = ["enabled": self.includedLightsStrobe.contains(light)]
-            request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
-            
-            URLSession.shared.dataTask(with: request).resume()
-        }
+        guard let url = URL(string: "\(self.baseUrl)/set_strobe_mode") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let lightsArray = self.includedLightsStrobe.map { $0.rawValue }
+        let body: [String: Any] = ["lights": lightsArray]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
     }
     
     private func setSceneFor(_ light: Light, scene: LightScene) {
@@ -485,6 +537,17 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
+    func setLightChaseSpeed(_ speed: Double) {
+        guard let url = URL(string: "\(self.baseUrl)/set_sh_chase_speed") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body: [String: Int] = ["value": Int(speed)]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
+    }
+    
     // MARK: - MH Brightness control
     
     func setBrightnessFor(_ light: Light, brightness: Double) {
@@ -498,13 +561,13 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func toggleMhBreathe() {
-        self.movingHead.breathe.toggle()
-        guard let url = URL(string: "\(self.baseUrl)/set_mh_breathe") else { return }
+    func setBreatheMode() {
+        guard let url = URL(string: "\(self.baseUrl)/set_breathe_mode") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        let body: [String: Bool] = ["breathe": self.movingHead.breathe]
+        let lightsArray = self.includedLightsBreathe.map { $0.rawValue }
+        let body: [String: Any] = ["lights": lightsArray]
         request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
         
         URLSession.shared.dataTask(with: request).resume()

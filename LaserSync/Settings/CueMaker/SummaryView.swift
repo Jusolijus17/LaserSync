@@ -14,7 +14,7 @@ struct SummaryView: View {
     @Environment(\.dismiss) private var dismiss
     
     var onConfirm: () -> Void = {}
-    var onEditSection: (String) -> Void = { _ in }
+    var onEditSection: (CueMakerStep) -> Void = { _ in }
     
     var body: some View {
         GeometryReader { _ in
@@ -29,7 +29,7 @@ struct SummaryView: View {
                                 details: getLaserDetails()
                             )
                             .onTapGesture {
-                                onEditSection("Laser")
+                                onEditSection(.laserSettings)
                             }
                         }
                         
@@ -41,8 +41,16 @@ struct SummaryView: View {
                                 details: getMovingHeadDetails()
                             )
                             .onTapGesture {
-                                onEditSection("Moving Head")
+                                onEditSection(.movingHeadSettings)
                             }
+                        }
+                        
+                        // Section Spider Head
+                        if cue.affectedLights.contains(.spiderHead) {
+                            SummaryLightSection(iconName: "spider_head_icon", lightName: "Spider Head", details: getSpiderHeadDetails())
+                                .onTapGesture {
+                                    onEditSection(.spiderHeadSettings)
+                                }
                         }
                     }
                     .padding()
@@ -67,7 +75,7 @@ struct SummaryView: View {
                             .font(.title2)
                             .padding(.horizontal)
                         let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .white]
-                        ColorSelectorView(selectedColor: $cue.color, colors: colors)
+                        CueColorSelector(selectedColor: $cue.color, colors: colors)
                     }
                 }
                 
@@ -184,6 +192,48 @@ struct SummaryView: View {
         
         return details
     }
+    
+    func getSpiderHeadDetails() -> [(String, String)] {
+        var details: [(String, String)] = []
+        
+        // Mode
+        details.append(("Mode", cue.spiderHead.mode.rawValue.capitalized))
+        
+        // Blackout
+        if cue.spiderHead.mode == .blackout {
+            return details
+        }
+        
+        if cue.spiderHead.mode != .manual {
+            details.append(("Scene", "Off"))
+            details.append(("Color", "Auto"))
+            details.append(("Strobe", "Auto"))
+            details.append(("Brightness", "Auto"))
+            return details
+        }
+        
+        // Scene
+        let scene = cue.spiderHead.scene.rawValue.capitalized
+        details.append(("Scene", scene))
+        
+        // Position
+//        let position = "\(cue.movingHead.positionPreset?.name ?? "Off")"
+//        details.append(("Position", position))
+        
+        // Color
+        let color = cue.spiderHead.color.rawValue.capitalized
+        details.append(("Color", color))
+        
+        // Strobe
+        let strobe = cue.spiderHead.strobeSpeed == 0 ? "Off" : "\(Int(cue.spiderHead.strobeSpeed))%"
+        details.append(("Strobe", strobe))
+        
+        // Brightness
+        let brightness = cue.spiderHead.brightness == 0 ? "Off" : "\(Int(cue.spiderHead.brightness))%"
+        details.append(("Brightness", brightness))
+        
+        return details
+    }
 }
 
 // Section individuelle pour chaque lumière
@@ -227,7 +277,7 @@ struct SummaryLightSection: View {
     }
 }
 
-struct ColorSelectorView: View {
+struct CueColorSelector: View {
     @Binding var selectedColor: Color
     let colors: [Color]
 

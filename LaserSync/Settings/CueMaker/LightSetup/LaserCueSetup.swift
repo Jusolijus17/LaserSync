@@ -26,43 +26,9 @@ struct LaserCueSetup: View {
                     Group {
                         SettingToggle(settings: $cue.laserSettings, setting: .color, label: "Set Color")
                         
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack {
-                                ForEach(LaserColor.allCases) { laserColor in
-                                    if laserColor != .multicolor {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .fill(laserColor.colorValue)
-                                            .frame(width: 50, height: 50)
-                                            .overlay {
-                                                if cue.laser.color == laserColor {
-                                                    Image(systemName: "checkmark")
-                                                        .fontWeight(.semibold)
-                                                        .font(.title)
-                                                }
-                                            }
-                                            .onTapGesture {
-                                                cue.laser.color = laserColor
-                                            }
-                                    } else {
-                                        RoundedRectangle(cornerRadius: 10)
-                                            .multicolor()
-                                            .frame(width: 50, height: 50)
-                                            .overlay {
-                                                if cue.laser.color == laserColor {
-                                                    Image(systemName: "checkmark")
-                                                        .fontWeight(.semibold)
-                                                        .font(.title)
-                                                }
-                                            }
-                                            .onTapGesture {
-                                                cue.laser.color = laserColor
-                                            }
-                                    }
-                                }
-                            }
+                        ColorSelector(colors: LaserColor.allCases, selectedColor: $cue.laser.color, showMulticolor: true)
                             .padding(.bottom)
-                        }
-                        .disabledStyle(cue.laser.bpmSyncModes.contains(.color) || !cue.laserSettings.contains(.color))
+                            .disabledStyle(cue.laser.bpmSyncModes.contains(.color) || !cue.laserSettings.contains(.color))
                         
                         Button {
                             toggleBpmSyncFor(.color)
@@ -129,7 +95,7 @@ struct LaserCueSetup: View {
                                 .font(.headline)
                                 .frame(maxWidth: .infinity)
                                 .padding()
-                                .background(cue.includedLightStrobe.contains(.laser) ? Color.yellow : Color.gray)
+                                .background(cue.includedLightsStrobe.contains(.laser) ? Color.yellow : Color.gray)
                                 .foregroundColor(.white)
                                 .cornerRadius(10)
                         }
@@ -190,25 +156,17 @@ struct LaserCueSetup: View {
                 .padding(.bottom, 65)
             }
             
-            Button(action: onNext) {
-                Text("Next")
-                    .font(.headline)
-                    .frame(maxWidth: .infinity)
-                    .padding()
-                    .background(Color.accentColor)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
-            }
-            .padding()
-            .background()
+            NextButton(action: onNext)
+                .padding()
+                .background()
         }
     }
     
     private func toggleStrobeMode() {
-        if cue.includedLightStrobe.contains(.laser) {
-            cue.includedLightStrobe.remove(.laser)
+        if cue.includedLightsStrobe.contains(.laser) {
+            cue.includedLightsStrobe.remove(.laser)
         } else {
-            cue.includedLightStrobe.insert(.laser)
+            cue.includedLightsStrobe.insert(.laser)
         }
     }
     

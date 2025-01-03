@@ -10,21 +10,23 @@ import SwiftUI
 struct SpiderHeadHomePage: View {
     @EnvironmentObject private var laserConfig: LaserConfig
     @EnvironmentObject private var homeController: HomeController
+    @State private var isAnimatingBreathe = false
     
     var body: some View {
         VStack(spacing: 20) {
             Text("Spider Head")
                 .foregroundStyle(.white)
                 .font(.title2)
+                .fontWeight(.bold)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 2)
                 .background {
                     RoundedRectangle(cornerRadius: 15)
-                        .fill(.cyan)
+                        .fill(.green)
                 }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
                 
-                // Color
+                // MARK: - Color
                 Button(action: {
                     hapticFeedback()
                     homeController.changeSHColor()
@@ -56,45 +58,8 @@ struct SpiderHeadHomePage: View {
                         })
                         .cornerRadius(10)
                 }
-                  
-                // Breathe
-//                SquareButton(title: "Breathe", action: {
-//                    print("Touch")
-//                    laserConfig.toggleMhBreathe()
-//                }, backgroundColor: (isAnimatingBreathe ? Color.yellow : Color.gray), content: {
-//                    Image(systemName: "wave.3.up")
-//                        .font(.largeTitle)
-//                })
-//                .animation(Animation.linear(duration: 0.7).repeat(while: isAnimatingBreathe))
-//                .onChange(of: laserConfig.spiderHead.breathe) { _, newValue in
-//                    print(newValue)
-//                    self.isAnimatingBreathe = newValue
-//                }
                 
-                // Mode
-                SquareButton(title: "Mode", action: {
-                    laserConfig.toggleSHMode()
-                }, backgroundColor: {
-                    if laserConfig.spiderHead.mode == .blackout {
-                        return Color.gray
-                    } else if laserConfig.spiderHead.mode == .sound {
-                        return Color.green
-                    } else {
-                        return Color.yellow
-                    }
-                }()) {
-                    Text(laserConfig.spiderHead.mode.rawValue.capitalized)
-                        .font(.title2)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(.white)
-                }
-                .onLongPressGesture {
-                    hapticFeedback()
-                    laserConfig.spiderHead.mode = .blackout
-                    laserConfig.setModeFor(.spiderHead, mode: .blackout)
-                }
-                
-                // Scene
+                // MARK: - Scene
                 SquareButton(title: "Scene", action: {
                     laserConfig.toggleSHScene()
                 }, backgroundColor: {
@@ -118,6 +83,28 @@ struct SpiderHeadHomePage: View {
                 }
             }
             
+            // MARK: - Breathe
+            
+            Button {
+                toggleShBreathe()
+                laserConfig.setBreatheMode()
+            } label: {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(isAnimatingBreathe ? Color.yellow : Color.gray)
+                    .frame(height: 50)
+                    .overlay {
+                        Label("Breathe", systemImage: "wave.3.up")
+                            .font(.title2)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(.white)
+                    }
+            }
+            .animation(Animation.linear(duration: 0.7).repeat(while: isAnimatingBreathe))
+            .onChange(of: laserConfig.includedLightsBreathe) { _, newValue in
+                self.isAnimatingBreathe = newValue.contains(.spiderHead)
+            }
+            
+            // MARK: - Brightness
             CustomSliderView(sliderValue: $laserConfig.spiderHead.brightness, title: "Brightness", onValueChange: { newValue in
                 if newValue > 0 {
                     laserConfig.spiderHead.mode = .manual
@@ -127,11 +114,25 @@ struct SpiderHeadHomePage: View {
                 laserConfig.setBrightnessFor(.spiderHead, brightness: laserConfig.spiderHead.brightness)
             })
             
+            // MARK: - Strobe Speed
             CustomSliderView(sliderValue: $laserConfig.spiderHead.strobeSpeed, title: "Strobe", onValueChange: { _ in
                 laserConfig.setStrobeSpeedFor(.spiderHead, strobeSpeed: laserConfig.spiderHead.strobeSpeed)
             })
+            
+            // MARK: - Light chase
+            CustomSliderView(sliderValue: $laserConfig.spiderHead.lightChaseSpeed, title: "Chase") { speed in
+                laserConfig.setLightChaseSpeed(speed)
+            }
         }
         .padding(.horizontal, 20)
+    }
+    
+    private func toggleShBreathe() {
+        if laserConfig.includedLightsBreathe.contains(.spiderHead) {
+            laserConfig.includedLightsBreathe.remove(.spiderHead)
+        } else {
+            laserConfig.includedLightsBreathe.insert(.spiderHead)
+        }
     }
     
     func hapticFeedback() {

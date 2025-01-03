@@ -9,28 +9,34 @@ import SwiftUI
 
 struct ColorSelectionView: View {
     @EnvironmentObject private var laserConfig: LaserConfig
-    @State private var activeLights: Set<Light> = [.laser, .movingHead]
+    @State private var activeLights: Set<Light> = []
     @State private var selectedColors: [Light: Color] = [:]
 
     var body: some View {
         VStack {
             LightImage(light: .all, selectable: true, selection: $activeLights)
             
-            Spacer()
-            
-            VStack {
-                ColorGridView(
-                    colors: getColors(),
-                    activeLights: $activeLights,
-                    selectedColors: $selectedColors,
-                    onChangeColor: { updatedColors in
-                        hapticFeedback()
-                        print(updatedColors)
-                        laserConfig.changeColor(lights: updatedColors)
-                    }
-                )
-                .disabledStyle(activeLights.isEmpty)
+            if activeLights.count == 1 && activeLights.contains(.spiderHead) {
+                SpiderHeadLedSelector(onSelectionChange: { leds in
+                    laserConfig.setSHLedSelection(leds: leds)
+                })
+                .padding()
+                .frame(maxHeight: .infinity)
+            } else {
+                Spacer()
             }
+            
+            ColorGridView(
+                colors: getColors(),
+                activeLights: $activeLights,
+                selectedColors: $selectedColors,
+                onChangeColor: { updatedColors in
+                    hapticFeedback()
+                    print(updatedColors)
+                    laserConfig.changeColor(lights: updatedColors)
+                }
+            )
+            .disabledStyle(activeLights.isEmpty)
             
             if activeLights.count == 1 {
                 if activeLights.contains(.laser) {
@@ -42,6 +48,11 @@ struct ColorSelectionView: View {
                     })
                     .padding(.horizontal, 20)
                     .padding(.top, 10)
+                } else if activeLights.contains(.spiderHead) {
+                    MulticolorButton(isSelected: laserConfig.spiderHead.color.colorValue == .clear) {
+                        laserConfig.changeColor(lights: [.spiderHead: .clear])
+                    }
+                    .padding([.horizontal, .top], 20)
                 }
             }
         }
@@ -64,8 +75,8 @@ struct ColorSelectionView: View {
                 return Set(laserColors()) // Transformé en Set pour les opérations d'interception
             case .movingHead:
                 return Set(movingHeadColor())
-            case .all:
-                return Set(laserColors() + movingHeadColor())
+            case .spiderHead:
+                return Set(spiderHeadColor())
             default: return []
             }
         }
@@ -84,6 +95,12 @@ struct ColorSelectionView: View {
 
     private func movingHeadColor() -> [Color] {
         return MovingHeadColor.allCases
+            .filter { $0.colorValue != .clear }
+            .map { $0.colorValue }
+    }
+    
+    private func spiderHeadColor() -> [Color] {
+        return SpiderHeadColor.allCases
             .filter { $0.colorValue != .clear }
             .map { $0.colorValue }
     }
@@ -150,46 +167,31 @@ struct LightImage: View {
     var selectable: Bool = false
     @Binding var selection: Set<Light>
     
-    init(light: Light, width: CGFloat = 100, height: CGFloat = 100, selectable: Bool = false, selection: Binding<Set<Light>> = .constant([])) {
+    init(light: Light,
+         width: CGFloat = 75,
+         height: CGFloat = 75,
+         selectable: Bool = false,
+         selection: Binding<Set<Light>> = .constant([])) {
         self.light = light
         self.width = width
         self.height = height
         self.selectable = selectable
         self._selection = selection
     }
-
+    
     var body: some View {
         HStack {
-            Group {
-                if light == .all {
-                    Image("laser_icon")
-                        .resizable()
-                        .scaledToFit()
-                        .frame(width: width, height: height)
-                        .padding()
-                        .background {
-                            RoundedRectangle(cornerRadius: 20)
-                                .fill(selection.contains(.laser) ? Color.gray.opacity(0.7) : Color.clear)
-                                .overlay(
-                                    RoundedRectangle(cornerRadius: 20)
-                                        .stroke(Color.gray.opacity(0.7), lineWidth: 3)
-                                )
-                        }
-                        .onTapGesture {
-                            if selectable {
-                                hapticFeedback()
-                                toggleSelectionFor(.laser)
-                            }
-                        }
-                }
-                Image(getLightImage())
+            ForEach(lightsToDisplay, id: \.self) { subLight in
+                Image(imageName(for: subLight))
                     .resizable()
                     .scaledToFit()
                     .frame(width: width, height: height)
                     .padding()
                     .background {
                         RoundedRectangle(cornerRadius: 20)
-                            .fill(selection.contains(.movingHead) ? Color.gray.opacity(0.7) : Color.clear)
+                            .fill(selection.contains(subLight)
+                                  ? Color.gray.opacity(0.7)
+                                  : Color.clear)
                             .overlay(
                                 RoundedRectangle(cornerRadius: 20)
                                     .stroke(Color.gray.opacity(0.7), lineWidth: 3)
@@ -198,23 +200,29 @@ struct LightImage: View {
                     .onTapGesture {
                         if selectable {
                             hapticFeedback()
-                            toggleSelectionFor(.movingHead)
+                            toggleSelectionFor(subLight)
                         }
                     }
             }
         }
-        .padding(.bottom)
     }
-
-    private func getLightImage() -> String {
+    
+    private var lightsToDisplay: [Light] {
+        light == .all ? [.laser, .movingHead, .spiderHead] : [light]
+    }
+    
+    private func imageName(for light: Light) -> String {
         switch light {
-        case .all: return "moving_head_icon"
-        case .laser: return "laser_icon"
-        case .movingHead: return "moving_head_icon"
+        case .laser:
+            return "laser_icon"
+        case .movingHead:
+            return "moving_head_icon"
+        case .spiderHead:
+            return "spider_head_icon"
         default: return ""
         }
     }
-
+    
     private func toggleSelectionFor(_ light: Light) {
         if selection.contains(light) {
             selection.remove(light)
@@ -234,23 +242,10 @@ struct LaserColorOptions: View {
     
     var body: some View {
         VStack {
-            Button(action: {
-                hapticFeedback()
+            MulticolorButton(
+                isSelected: laserConfig.laser.color.colorValue == .clear
+            ) {
                 laserConfig.changeColor(lights: [.laser: .clear])
-            }) {
-                RoundedRectangle(cornerRadius: 10)
-                    .multicolor()
-                    .frame(height: 50)
-                    .overlay(content: {
-                        Text(LaserColor.multicolor.rawValue.capitalized)
-                            .font(.title3)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(.white)
-                        if laserConfig.laser.color.colorValue == .clear {
-                            RoundedRectangle(cornerRadius: 10)
-                                .stroke(.white, lineWidth: 3)
-                        }
-                    })
             }
             
             Button(action: {
@@ -267,6 +262,38 @@ struct LaserColorOptions: View {
             }
         }
         .padding(.horizontal, 20)
+    }
+    
+    private func hapticFeedback() {
+        let generator = UIImpactFeedbackGenerator(style: .medium)
+        generator.impactOccurred()
+    }
+}
+
+struct MulticolorButton: View {
+    var isSelected: Bool
+    var action: () -> Void
+    
+    var body: some View {
+        Button(action: {
+            hapticFeedback()
+            action()
+        }) {
+            RoundedRectangle(cornerRadius: 10)
+                .multicolor()
+                .frame(height: 50)
+                .overlay {
+                    Text("Multicolor")
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(.white)
+                    
+                    if isSelected {
+                        RoundedRectangle(cornerRadius: 10)
+                            .stroke(.white, lineWidth: 3)
+                    }
+                }
+        }
     }
     
     private func hapticFeedback() {

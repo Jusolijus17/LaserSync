@@ -22,8 +22,13 @@ struct Cue: Identifiable, Codable {
     var movingHead = MovingHeadState()
     var movingHeadSettings: Set<LightSettings> = []
     
+    // Spider Head
+    var spiderHead = SpiderHeadState()
+    var spiderHeadSettings: Set<LightSettings> = []
+    
     // All
-    var includedLightStrobe: Set<Light> = []
+    var includedLightsStrobe: Set<Light> = []
+    var includedLightsBreathe: Set<Light> = []
 }
 
 enum LightSettings: String, Codable, CaseIterable {
@@ -32,6 +37,7 @@ enum LightSettings: String, Codable, CaseIterable {
     case strobe
     
     // Moving Head
+    case gobo
     case scene
     case position
     case strobeSpeed
@@ -42,6 +48,9 @@ enum LightSettings: String, Codable, CaseIterable {
     case vAdjust
     case hAnimation
     case vAnimation
+    
+    // Spider Head
+    case chase
 }
 
 extension Cue {

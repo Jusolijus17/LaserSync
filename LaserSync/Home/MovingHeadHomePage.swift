@@ -17,15 +17,16 @@ struct MovingHeadHomePage: View {
             Text("Moving Head")
                 .foregroundStyle(.white)
                 .font(.title2)
+                .fontWeight(.bold)
                 .padding(.horizontal, 10)
                 .padding(.vertical, 2)
                 .background {
                     RoundedRectangle(cornerRadius: 15)
-                        .fill(.cyan)
+                        .fill(.blue)
                 }
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
                 
-                // Color
+                // MARK: - Color
                 Button(action: {
                     hapticFeedback()
                     homeController.changeMHColor()
@@ -58,43 +59,42 @@ struct MovingHeadHomePage: View {
                         .cornerRadius(10)
                 }
                   
-                // Breathe
+                // MARK: - Breathe
                 SquareButton(title: "Breathe", action: {
                     print("Touch")
-                    laserConfig.toggleMhBreathe()
+                    toggleMhBreathe()
+                    laserConfig.setBreatheMode()
                 }, backgroundColor: (isAnimatingBreathe ? Color.yellow : Color.gray), content: {
                     Image(systemName: "wave.3.up")
                         .font(.largeTitle)
                 })
                 .animation(Animation.linear(duration: 0.7).repeat(while: isAnimatingBreathe))
-                .onChange(of: laserConfig.movingHead.breathe) { _, newValue in
-                    print(newValue)
-                    self.isAnimatingBreathe = newValue
+                .onChange(of: laserConfig.includedLightsBreathe) { _, newValue in
+                    self.isAnimatingBreathe = newValue.contains(.movingHead)
                 }
                 
-                // Mode
-                SquareButton(title: "Mode", action: {
-                    laserConfig.toggleMHMode()
+                // MARK: - Mode
+                SquareButton(title: "Gobo", action: {
+                    laserConfig.toggleMhGobo()
                 }, backgroundColor: {
-                    if laserConfig.movingHead.mode == .blackout {
+                    if laserConfig.movingHead.gobo == 0 {
                         return Color.gray
-                    } else if laserConfig.movingHead.mode == .sound {
-                        return Color.green
                     } else {
                         return Color.yellow
                     }
                 }()) {
-                    Text(laserConfig.movingHead.mode.rawValue.capitalized)
+                    Text("\(laserConfig.movingHead.gobo)")
                         .font(.title2)
                         .fontWeight(.semibold)
                         .foregroundStyle(.white)
                 }
                 .onLongPressGesture {
                     hapticFeedback()
-                    laserConfig.turnOffMovingHead()
+                    laserConfig.movingHead.gobo = 0
+                    laserConfig.setMhGobo()
                 }
                 
-                // Scene
+                // MARK: - Scene
                 SquareButton(title: "Scene", action: {
                     laserConfig.toggleMHScene()
                 }, backgroundColor: {
@@ -118,16 +118,18 @@ struct MovingHeadHomePage: View {
                 }
             }
             
+            // MARK: - Brightness
             CustomSliderView(sliderValue: $laserConfig.movingHead.brightness, title: "Brightness", onValueChange: { newValue in
                 if newValue > 0 {
                     laserConfig.movingHead.mode = .manual
                 } else {
                     laserConfig.movingHead.mode = .blackout
-                    laserConfig.movingHead.breathe = false
+                    laserConfig.includedLightsBreathe.remove(.movingHead)
                 }
                 laserConfig.setBrightnessFor(.movingHead, brightness: laserConfig.movingHead.brightness)
             })
             
+            // MARK: - Strobe Speed
             CustomSliderView(sliderValue: $laserConfig.movingHead.strobeSpeed, title: "Strobe", onValueChange: { _ in
                 laserConfig.setStrobeSpeedFor(.movingHead, strobeSpeed: laserConfig.movingHead.strobeSpeed)
             })
@@ -135,8 +137,22 @@ struct MovingHeadHomePage: View {
         .padding(.horizontal, 20)
     }
     
-    func hapticFeedback() {
+    private func toggleMhBreathe() {
+        if laserConfig.includedLightsBreathe.contains(.movingHead) {
+            laserConfig.includedLightsBreathe.remove(.movingHead)
+        } else {
+            laserConfig.includedLightsBreathe.insert(.movingHead)
+        }
+    }
+    
+    private func hapticFeedback() {
         let generator = UIImpactFeedbackGenerator(style: .medium)
         generator.impactOccurred()
     }
+}
+
+#Preview {
+    MovingHeadHomePage()
+        .environmentObject(LaserConfig())
+        .environmentObject(HomeController())
 }
