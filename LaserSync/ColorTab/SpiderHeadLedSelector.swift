@@ -10,18 +10,8 @@ import SwiftUI
 struct SpiderHeadLedSelector: View {
     // Tableau local des 8 LEDs
     // 2 x (RGBW)
-    @State private var leds: [LEDCell] = [
-        LEDCell(id: 0, color: .red, side: "right",   isOn: false),
-        LEDCell(id: 1, color: .green, side: "right", isOn: false),
-        LEDCell(id: 2, color: .blue, side: "right",  isOn: false),
-        LEDCell(id: 3, color: .white, side: "right", isOn: false),
-        
-        LEDCell(id: 4, color: .red, side: "left",   isOn: false),
-        LEDCell(id: 5, color: .green, side: "left", isOn: false),
-        LEDCell(id: 6, color: .blue, side: "left",  isOn: false),
-        LEDCell(id: 7, color: .white, side: "left", isOn: false)
-    ]
-    var onSelectionChange: ([LEDCell]) -> Void = { _ in }
+    @Binding var leds: [LEDCell]
+    var onSelectionChange: () -> Void = { }
     
     var body: some View {
         // Pour séparer en 2 rangées de 4
@@ -46,7 +36,7 @@ struct SpiderHeadLedSelector: View {
                 .aspectRatio(1, contentMode: .fit) // pour rendre le carré
                 .onTapGesture {
                     led.isOn.toggle()
-                    onSelectionChange(leds)
+                    onSelectionChange()
                     hapticFeedback()
                 }
             }
@@ -66,6 +56,24 @@ struct LEDCell: Identifiable, Codable {
     var isOn: Bool
 }
 
+struct ShLedSelector_Preview: View {
+    @State private var leds = [
+        LEDCell(id: 0, color: .red, side: "right",   isOn: false),
+        LEDCell(id: 1, color: .green, side: "right", isOn: false),
+        LEDCell(id: 2, color: .blue, side: "right",  isOn: false),
+        LEDCell(id: 3, color: .white, side: "right", isOn: false),
+        
+        LEDCell(id: 4, color: .red, side: "left",   isOn: false),
+        LEDCell(id: 5, color: .green, side: "left", isOn: false),
+        LEDCell(id: 6, color: .blue, side: "left",  isOn: false),
+        LEDCell(id: 7, color: .white, side: "left", isOn: false)
+    ]
+    
+    var body: some View {
+        SpiderHeadLedSelector(leds: $leds)
+    }
+}
+
 #Preview {
-    SpiderHeadLedSelector()
+    ShLedSelector_Preview()
 }

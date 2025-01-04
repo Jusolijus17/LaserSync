@@ -34,17 +34,14 @@ struct SpiderHeadCueSetup: View {
                     SettingToggle(settings: $cue.spiderHeadSettings, setting: .color, label: "Set Color")
                     
                     Group {
-                        SpiderHeadLedSelector(onSelectionChange: { leds in
-                            let anyLedIsOn = leds.contains { $0.isOn }
-                            cue.spiderHead.ledSelection = anyLedIsOn ? leds : nil
-                        })
+                        SpiderHeadLedSelector(leds: $cue.spiderHead.ledSelection)
                         .frame(height: 200)
                         .frame(maxWidth: .infinity)
                         .padding(.bottom)
                         
                         ColorSelector(colors: SpiderHeadColor.allCases, selectedColor: $cue.spiderHead.color, showMulticolor: true)
                             .padding(.bottom)
-                            .disabledStyle(cue.spiderHead.ledSelection != nil)
+                            .disabledStyle(cue.spiderHead.ledSelection.contains { $0.isOn })
                     }
                     .disabledStyle(!cue.spiderHeadSettings.contains(.color))
                     
@@ -78,11 +75,16 @@ struct SpiderHeadCueSetup: View {
                         .disabledStyle(!cue.spiderHeadSettings.contains(.strobeSpeed))
                     
                     // MARK: - Chase speed
-                    SettingToggle(settings: $cue.spiderHeadSettings, setting: .chase, label: "Set Chase Speed")
+                    SettingToggle(settings: $cue.spiderHeadSettings, setting: .chaseSpeed, label: "Set Chase Speed")
+                        .onChange(of: cue.spiderHeadSettings) { _, newValue in
+                            if newValue.contains(.color) {
+                                cue.spiderHead.lightChaseSpeed = 0
+                            }
+                        }
                     
                     CustomSliderView(sliderValue: $cue.spiderHead.lightChaseSpeed, title: "Chase")
                         .padding(.bottom)
-                        .disabledStyle(!cue.spiderHeadSettings.contains(.chase))
+                        .disabledStyle(!cue.spiderHeadSettings.contains(.chaseSpeed))
                     
                 }
                 .padding()

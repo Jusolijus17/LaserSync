@@ -182,9 +182,7 @@ class LaserConfig: ObservableObject {
     // MARK: - CUE settings
     
     func setCue(_ cue: Cue) {
-        if cue.type == .temporary {
-            self.savePreviousState()
-        } else {
+        if cue.type != .temporary {
             self.applyCue(cue)
         }
         guard let url = URL(string: "\(self.baseUrl)/set_cue") else { return }
@@ -206,87 +204,72 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func stopCue() {
-        guard let url = URL(string: "\(self.baseUrl)/set_cue") else { return }
-        self.restorePreviousState()
+    func restoreState() {
+        guard let url = URL(string: "\(self.baseUrl)/restore_state") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")
         
-        // Restore Cue
-        let allSettings = Set(LightSettings.allCases)
-        let previousStateCue = Cue(name: "Restore Cue", affectedLights: [.laser, .movingHead], laser: self.laser, laserSettings: allSettings, movingHead: self.movingHead, movingHeadSettings: allSettings)
-        
-        do {
-            let encoder = JSONEncoder()
-            encoder.outputFormatting = .prettyPrinted
-            let jsonData = try encoder.encode(previousStateCue)
-            request.httpBody = jsonData
-//            if let jsonString = String(data: jsonData, encoding: .utf8) {
-//                print("JSON to send: \(jsonString)")
-//            }
-        } catch {
-            print("Failed to encode Cue: \(error)")
-            return
-        }
         URLSession.shared.dataTask(with: request).resume()
-    }
-    
-    private func savePreviousState() {
-        self.previousLaserState = self.laser
-        self.previousMovingHeadState = self.movingHead
-        self.previousIncludedLightStrobe = self.includedLightsStrobe
-    }
-    
-    private func restorePreviousState() {
-        self.laser = self.previousLaserState ?? LaserState()
-        self.movingHead = self.previousMovingHeadState ?? MovingHeadState()
-        self.includedLightsStrobe = self.previousIncludedLightStrobe ?? []
-        
-        if self.laser.bpmSyncModes.contains(.pattern) || self.laser.bpmSyncModes.contains(.color) {
-            self.startBpmSyncTimer()
-        } else {
-            self.stopBpmSyncTimer()
-        }
     }
     
     private func applyCue(_ cue: Cue?) {
         guard let cue else { return }
-
-        // Appliquer les réglages pour le laser
-        if cue.affectedLights.contains(.laser) {
-            self.laser.merge(with: cue.laser, settings: cue.laserSettings)
-            if cue.laserSettings.contains(.pattern) || cue.laserSettings.contains(.color) {
-                if !self.laser.bpmSyncModes.isEmpty {
-                    self.startBpmSyncTimer()
-                } else {
-                    self.stopBpmSyncTimer()
-                }
-            }
-            if cue.laserSettings.contains(.strobe) {
-                if self.includedLightsStrobe.contains(.laser) && !cue.includedLightsStrobe.contains(.laser) {
-                    self.includedLightsStrobe.remove(.laser)
-                } else if !self.includedLightsStrobe.contains(.laser) && cue.includedLightsStrobe.contains(.laser) {
-                    self.includedLightsStrobe.insert(.laser)
+        
+        // Définir une fonction générique pour gérer les strobe et breathe
+        func updateIncludedLights(_ light: Light, settings: Set<LightSettings>, affectedList: inout Set<Light>, cueList: Set<Light>) {
+            if settings.contains(.strobe) {
+                if affectedList.contains(light) && !cueList.contains(light) {
+                    affectedList.remove(light)
+                } else if !affectedList.contains(light) && cueList.contains(light) {
+                    affectedList.insert(light)
                 }
             }
         }
         
-        print("Laser mode now : ", self.laser.mode)
-
-        // Appliquer les réglages pour le moving head
-        if cue.affectedLights.contains(.movingHead) {
-            self.movingHead.merge(with: cue.movingHead, settings: cue.movingHeadSettings)
-            if cue.movingHeadSettings.contains(.strobe) {
-                if self.includedLightsStrobe.contains(.movingHead) && !cue.includedLightsStrobe.contains(.movingHead) {
-                    self.includedLightsStrobe.remove(.movingHead)
-                } else if !self.includedLightsStrobe.contains(.movingHead) && cue.includedLightsStrobe.contains(.movingHead) {
-                    self.includedLightsStrobe.insert(.movingHead)
+        // Parcourir les lumières affectées
+        for light in cue.affectedLights {
+            switch light {
+            case .laser:
+                self.laser.merge(with: cue.laser, settings: cue.laserSettings)
+                
+                // Gérer la synchronisation BPM
+                if cue.laserSettings.contains(.pattern) || cue.laserSettings.contains(.color) {
+                    if !self.laser.bpmSyncModes.isEmpty {
+                        self.startBpmSyncTimer()
+                    } else {
+                        self.stopBpmSyncTimer()
+                    }
                 }
+                
+                // Mettre à jour les strobe
+                updateIncludedLights(.laser, settings: cue.laserSettings, affectedList: &self.includedLightsStrobe, cueList: cue.includedLightsStrobe)
+                
+            case .movingHead:
+                self.movingHead.merge(with: cue.movingHead, settings: cue.movingHeadSettings)
+                
+                // Mettre à jour les strobe
+                updateIncludedLights(.movingHead, settings: cue.movingHeadSettings, affectedList: &self.includedLightsStrobe, cueList: cue.includedLightsStrobe)
+                
+                // Mettre à jour les breathe
+                updateIncludedLights(.movingHead, settings: cue.movingHeadSettings, affectedList: &self.includedLightsBreathe, cueList: cue.includedLightsBreathe)
+                
+            case .spiderHead:
+                self.spiderHead.merge(with: cue.spiderHead, settings: cue.spiderHeadSettings)
+                
+                // Mettre à jour les strobe
+                updateIncludedLights(.spiderHead, settings: cue.spiderHeadSettings, affectedList: &self.includedLightsStrobe, cueList: cue.includedLightsStrobe)
+                
+                // Mettre à jour les breathe
+                updateIncludedLights(.spiderHead, settings: cue.spiderHeadSettings, affectedList: &self.includedLightsBreathe, cueList: cue.includedLightsBreathe)
+                
+            default:
+                break
             }
         }
         
-        print("Moving head mode now : ", self.movingHead.mode)
+        print("Laser mode now: ", self.laser.mode)
+        print("Moving head mode now: ", self.movingHead.mode)
     }
 
     
@@ -376,7 +359,7 @@ class LaserConfig: ObservableObject {
     }
     
     func togglePatternInclusion(pattern: LaserPattern) {
-        if laser.includedPatterns.contains(pattern) {
+        if laser.includedPatterns.contains(pattern) && laser.includedPatterns.count > 2 {
             self.laser.includedPatterns.remove(pattern)
         } else {
             self.laser.includedPatterns.insert(pattern)
@@ -689,7 +672,7 @@ class LaserConfig: ObservableObject {
             laser.bpmSyncModes.insert(mode)
             startBpmSyncTimer()
         }
-        setSyncMode()
+        setSyncModeFor(.laser)
     }
     
     private func startBpmSyncTimer() {
@@ -735,9 +718,16 @@ class LaserConfig: ObservableObject {
         URLSession.shared.dataTask(with: request).resume()
     }
     
-    func setSyncMode() {
-        let syncModes = self.laser.bpmSyncModes.map { $0.rawValue }.joined(separator: ",")
-        guard let url = URL(string: "\(self.baseUrl)/set_sync_mode") else { return }
+    func setSyncModeFor(_ light: Light) {
+        var syncModes: String
+        if light == .laser {
+            syncModes = self.laser.bpmSyncModes.map { $0.rawValue }.joined(separator: ",")
+        } else if light == .spiderHead {
+            syncModes = self.spiderHead.bpmSyncModes.map { $0.rawValue }.joined(separator: ",")
+        } else {
+            return
+        }
+        guard let url = URL(string: "\(self.baseUrl)/set_sync_mode_for/\(light)") else { return }
         var request = URLRequest(url: url)
         request.httpMethod = "POST"
         request.setValue("application/json", forHTTPHeaderField: "Content-Type")

@@ -14,70 +14,7 @@ struct HomeView: View {
     
     var body: some View {
         VStack {
-            VStack(spacing: 0) {
-                HStack {
-                    Text("\(laserConfig.currentBpm) BPM")
-                        .font(.largeTitle)
-                        .foregroundColor(.white)
-                        .onChange(of: laserConfig.networkErrorCount) {
-                            if laserConfig.networkErrorCount >= 3 {
-                                homeController.showRetry = true
-                                homeController.stopBlinking()
-                            }
-                        }
-                    
-                    Circle()
-                        .fill(homeController.getBpmIndicatorColor())
-                        .frame(width: 20, height: 20)
-                        .opacity(homeController.isBlinking || laserConfig.currentBpm == 0 ? 1.0 : 0.0)
-                }
-                
-                if !homeController.showRetry {
-                    HStack {
-                        Button {
-                            hapticFeedback()
-                            homeController.decrementMultiplier()
-                        } label: {
-                            Image(systemName: "minus")
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                                .frame(width: 25, height: 25)
-                                .background(
-                                    Circle()
-                                        .fill(Color.red)
-                                )
-                        }
-                        
-                        Text(homeController.multiplierText())
-                            .font(.title2)
-                            .fontWeight(.semibold)
-                            .foregroundColor(homeController.multiplierColor())
-                        
-                        Button {
-                            hapticFeedback()
-                            homeController.incrementMultiplier()
-                        } label: {
-                            Image(systemName: "plus")
-                                .font(.subheadline)
-                                .foregroundColor(.green)
-                                .frame(width: 25, height: 25)
-                                .background(
-                                    Circle()
-                                        .fill(Color.white)
-                                )
-                        }
-                    }
-                    .frame(height: 30)
-                } else {
-                    Button(action: {
-                        laserConfig.restartBpmUpdate()
-                        homeController.showRetry = false
-                    }) {
-                        Label("Retry", systemImage: "arrow.clockwise.circle")
-                            .frame(height: 30)
-                    }
-                }
-            }
+            BPMViewer()
             
             TabView {
                 LaserHomePage()
@@ -87,16 +24,8 @@ struct HomeView: View {
             }
             .tabViewStyle(.page(indexDisplayMode: .always))
             .environmentObject(homeController)
-            .onChange(of: laserConfig.laser.mode) { oldValue, newValue in
-                print("Changed!", newValue)
-            }
         }
         .background(Color.black.edgesIgnoringSafeArea(.all))
-        .onChange(of: laserConfig.currentBpm) {
-            if laserConfig.currentBpm != 0 {
-                homeController.restartBlinking()
-            }
-        }
         .onAppear {
             homeController.setLaserConfig(laserConfig)
         }

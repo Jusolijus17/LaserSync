@@ -17,8 +17,8 @@ struct ColorSelectionView: View {
             LightImage(light: .all, selectable: true, selection: $activeLights)
             
             if activeLights.count == 1 && activeLights.contains(.spiderHead) {
-                SpiderHeadLedSelector(onSelectionChange: { leds in
-                    laserConfig.setSHLedSelection(leds: leds)
+                SpiderHeadLedSelector(leds: $laserConfig.spiderHead.ledSelection, onSelectionChange: {
+                    laserConfig.setSHLedSelection(leds: laserConfig.spiderHead.ledSelection)
                 })
                 .padding()
                 .frame(maxHeight: .infinity)

@@ -86,6 +86,7 @@ struct SpiderHeadHomePage: View {
             // MARK: - Breathe
             
             Button {
+                hapticFeedback()
                 toggleShBreathe()
                 laserConfig.setBreatheMode()
             } label: {

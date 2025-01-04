@@ -17,7 +17,10 @@ struct CuePadView: View {
     
     var body: some View {
         VStack {
+            BPMViewer()
+            
             Spacer()
+            
             if currentPage == 0 {
                 VStack {
                     LazyVGrid(columns: Array(repeating: GridItem(.flexible()), count: 3), spacing: 20) {
@@ -45,7 +48,7 @@ struct CuePadView: View {
                                         if !isPressing && cue.type == .temporary && cuePressed {
                                             print("Temp cue stop")
                                             cuePressed = false
-                                            laserConfig.stopCue()
+                                            laserConfig.restoreState()
                                         }
                                         if isPressing && cue.type == .definitive {
                                             print("Cue")
@@ -83,6 +86,7 @@ struct CuePadView: View {
             } nextAction: {
                 self.currentPage = 1
             }
+            .padding(.bottom)
 
         }
         .onAppear {

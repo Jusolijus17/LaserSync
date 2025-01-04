@@ -127,6 +127,11 @@ struct MovingHeadCueSetup: View {
                         }
                         .padding(.bottom)
                         .disabledStyle(!cue.movingHeadSettings.contains(.strobe))
+                        .onChange(of: cue.includedLightsStrobe) { _, newValue in
+                            if newValue.contains(.movingHead) {
+                                cue.includedLightsBreathe.remove(.movingHead)
+                            }
+                        }
                         
                         // MARK: - Brightness
                         SettingToggle(settings: $cue.movingHeadSettings, setting: .brightness, label: "Set Brightness")
@@ -154,7 +159,7 @@ struct MovingHeadCueSetup: View {
                                 .cornerRadius(10)
                         }
                         .padding(.bottom)
-                        .disabledStyle(!cue.movingHeadSettings.contains(.brightness) || cue.movingHeadSettings.contains(.strobe))
+                        .disabledStyle(!cue.movingHeadSettings.contains(.brightness) || (cue.movingHeadSettings.contains(.strobe) && cue.includedLightsStrobe.contains(.movingHead)))
                     }
                     .disabledStyle(cue.movingHead.mode != .manual)
                 }

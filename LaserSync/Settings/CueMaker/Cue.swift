@@ -50,7 +50,7 @@ enum LightSettings: String, Codable, CaseIterable {
     case vAnimation
     
     // Spider Head
-    case chase
+    case chaseSpeed
 }
 
 extension Cue {
