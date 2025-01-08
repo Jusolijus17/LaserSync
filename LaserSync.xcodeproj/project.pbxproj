@@ -22,10 +22,11 @@
 		3D4F89CE2D120E190004AA46 /* SummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4F89CD2D120E190004AA46 /* SummaryView.swift */; };
 		3D4F89D02D120E580004AA46 /* Cue.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4F89CF2D120E580004AA46 /* Cue.swift */; };
 		3D4F89D22D12177F0004AA46 /* EditCueView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D4F89D12D12177F0004AA46 /* EditCueView.swift */; };
+		3D656D1E2D210DF000917D71 /* SpiderHeadHomePage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D656D1D2D210DF000917D71 /* SpiderHeadHomePage.swift */; };
+		3D656D212D210F7600917D71 /* SpiderHeadState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D656D202D210F7000917D71 /* SpiderHeadState.swift */; };
 		3D74839F2D165174009302B3 /* ColorSelectionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D74839E2D165174009302B3 /* ColorSelectionView.swift */; };
 		3D7483A12D1773DE009302B3 /* HomeController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7483A02D1773D1009302B3 /* HomeController.swift */; };
 		3D7483A42D19DBD8009302B3 /* SettingToggle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D7483A32D19DBD8009302B3 /* SettingToggle.swift */; };
-		3D78D3802C37812700123283 /* LaserColorView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D37F2C37812700123283 /* LaserColorView.swift */; };
 		3D78D3822C37817500123283 /* PatternControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3812C37817500123283 /* PatternControlView.swift */; };
 		3D78D3842C37819F00123283 /* ModeControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3832C37819F00123283 /* ModeControlView.swift */; };
 		3D78D3862C3781BF00123283 /* LaserSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D78D3852C3781BF00123283 /* LaserSettings.swift */; };
@@ -33,14 +34,25 @@
 		3D953A2B2CA3B93900E66C94 /* Objects.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D953A2A2CA3B93900E66C94 /* Objects.swift */; };
 		3D953A2D2CA4E2B600E66C94 /* TapDetector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D953A2C2CA4E2B600E66C94 /* TapDetector.swift */; };
 		3D953A2F2CA60C9200E66C94 /* CustomSliderView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D953A2E2CA60C9200E66C94 /* CustomSliderView.swift */; };
-		3D9EBA292D13D62C00EE5C39 /* PresetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9EBA282D13D62C00EE5C39 /* PresetManagerView.swift */; };
-		3D9EBA2B2D13D9BF00EE5C39 /* PrecisionControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9EBA2A2D13D9BF00EE5C39 /* PrecisionControlView.swift */; };
+		3D9EBA292D13D62C00EE5C39 /* MhPresetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9EBA282D13D62C00EE5C39 /* MhPresetManagerView.swift */; };
+		3D9EBA2B2D13D9BF00EE5C39 /* MhPrecisionControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9EBA2A2D13D9BF00EE5C39 /* MhPrecisionControlView.swift */; };
 		3D9EBA2F2D16032400EE5C39 /* CueSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3D9EBA2E2D16032400EE5C39 /* CueSettingsView.swift */; };
 		3DA7ADAD2C3A3C6100D52F38 /* LaserConfig.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */; };
 		3DDEEFAC2CE96B7E00429363 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDEEFAB2CE96B7E00429363 /* SettingsView.swift */; };
 		3DDEEFAE2CE96EE700429363 /* ServerSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDEEFAD2CE96EE700429363 /* ServerSettings.swift */; };
 		3DDEEFB22CE99E0100429363 /* SocketIOManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DDEEFB12CE99E0100429363 /* SocketIOManager.swift */; };
 		3DDEEFB52CE99E9B00429363 /* SocketIO in Frameworks */ = {isa = PBXBuildFile; productRef = 3DDEEFB42CE99E9B00429363 /* SocketIO */; };
+		3DF4E2322D23AC2400FB1C65 /* SpiderHeadLedSelector.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2312D23AC2400FB1C65 /* SpiderHeadLedSelector.swift */; };
+		3DF4E2342D23BE9A00FB1C65 /* MasterSliderPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2332D23BE9A00FB1C65 /* MasterSliderPage.swift */; };
+		3DF4E2362D25E31300FB1C65 /* SpiderHeadCueSetup.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2352D25E31300FB1C65 /* SpiderHeadCueSetup.swift */; };
+		3DF4E2382D25E68D00FB1C65 /* CustomViews.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2372D25E68D00FB1C65 /* CustomViews.swift */; };
+		3DF4E23C2D27898300FB1C65 /* RFDevicesPage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E23B2D27898300FB1C65 /* RFDevicesPage.swift */; };
+		3DF4E2402D27A85500FB1C65 /* RFStrobeState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E23F2D27A85500FB1C65 /* RFStrobeState.swift */; };
+		3DF4E2422D27B56200FB1C65 /* SpiderHeadSettings.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2412D27B55A00FB1C65 /* SpiderHeadSettings.swift */; };
+		3DF4E2442D27B5DD00FB1C65 /* ShPrecisionControlView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2432D27B5DD00FB1C65 /* ShPrecisionControlView.swift */; };
+		3DF4E2462D28D72000FB1C65 /* BPMViewer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2452D28D72000FB1C65 /* BPMViewer.swift */; };
+		3DF4E2482D28D83800FB1C65 /* BPMViewerController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF4E2472D28D83800FB1C65 /* BPMViewerController.swift */; };
+		3DF5BAD52D28EAEF0002C604 /* ShPresetManagerView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF5BAD42D28EAEF0002C604 /* ShPresetManagerView.swift */; };
 		3DF733472C3F7F3700DF9C83 /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DF733462C3F7F3700DF9C83 /* Extensions.swift */; };
 		3DFD8A8F2C377AB100A8B186 /* LaserSyncApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DFD8A8E2C377AB100A8B186 /* LaserSyncApp.swift */; };
 		3DFD8A912C377AB100A8B186 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3DFD8A902C377AB100A8B186 /* ContentView.swift */; };
@@ -64,10 +76,11 @@
 		3D4F89CD2D120E190004AA46 /* SummaryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SummaryView.swift; sourceTree = "<group>"; };
 		3D4F89CF2D120E580004AA46 /* Cue.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Cue.swift; sourceTree = "<group>"; };
 		3D4F89D12D12177F0004AA46 /* EditCueView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EditCueView.swift; sourceTree = "<group>"; };
+		3D656D1D2D210DF000917D71 /* SpiderHeadHomePage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiderHeadHomePage.swift; sourceTree = "<group>"; };
+		3D656D202D210F7000917D71 /* SpiderHeadState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiderHeadState.swift; sourceTree = "<group>"; };
 		3D74839E2D165174009302B3 /* ColorSelectionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ColorSelectionView.swift; sourceTree = "<group>"; };
 		3D7483A02D1773D1009302B3 /* HomeController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeController.swift; sourceTree = "<group>"; };
 		3D7483A32D19DBD8009302B3 /* SettingToggle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingToggle.swift; sourceTree = "<group>"; };
-		3D78D37F2C37812700123283 /* LaserColorView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserColorView.swift; sourceTree = "<group>"; };
 		3D78D3812C37817500123283 /* PatternControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PatternControlView.swift; sourceTree = "<group>"; };
 		3D78D3832C37819F00123283 /* ModeControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ModeControlView.swift; sourceTree = "<group>"; };
 		3D78D3852C3781BF00123283 /* LaserSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserSettings.swift; sourceTree = "<group>"; };
@@ -75,13 +88,24 @@
 		3D953A2A2CA3B93900E66C94 /* Objects.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Objects.swift; sourceTree = "<group>"; };
 		3D953A2C2CA4E2B600E66C94 /* TapDetector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TapDetector.swift; sourceTree = "<group>"; };
 		3D953A2E2CA60C9200E66C94 /* CustomSliderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomSliderView.swift; sourceTree = "<group>"; };
-		3D9EBA282D13D62C00EE5C39 /* PresetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PresetManagerView.swift; sourceTree = "<group>"; };
-		3D9EBA2A2D13D9BF00EE5C39 /* PrecisionControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PrecisionControlView.swift; sourceTree = "<group>"; };
+		3D9EBA282D13D62C00EE5C39 /* MhPresetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MhPresetManagerView.swift; sourceTree = "<group>"; };
+		3D9EBA2A2D13D9BF00EE5C39 /* MhPrecisionControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MhPrecisionControlView.swift; sourceTree = "<group>"; };
 		3D9EBA2E2D16032400EE5C39 /* CueSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CueSettingsView.swift; sourceTree = "<group>"; };
 		3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserConfig.swift; sourceTree = "<group>"; };
 		3DDEEFAB2CE96B7E00429363 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		3DDEEFAD2CE96EE700429363 /* ServerSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerSettings.swift; sourceTree = "<group>"; };
 		3DDEEFB12CE99E0100429363 /* SocketIOManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SocketIOManager.swift; sourceTree = "<group>"; };
+		3DF4E2312D23AC2400FB1C65 /* SpiderHeadLedSelector.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiderHeadLedSelector.swift; sourceTree = "<group>"; };
+		3DF4E2332D23BE9A00FB1C65 /* MasterSliderPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MasterSliderPage.swift; sourceTree = "<group>"; };
+		3DF4E2352D25E31300FB1C65 /* SpiderHeadCueSetup.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiderHeadCueSetup.swift; sourceTree = "<group>"; };
+		3DF4E2372D25E68D00FB1C65 /* CustomViews.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CustomViews.swift; sourceTree = "<group>"; };
+		3DF4E23B2D27898300FB1C65 /* RFDevicesPage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RFDevicesPage.swift; sourceTree = "<group>"; };
+		3DF4E23F2D27A85500FB1C65 /* RFStrobeState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RFStrobeState.swift; sourceTree = "<group>"; };
+		3DF4E2412D27B55A00FB1C65 /* SpiderHeadSettings.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SpiderHeadSettings.swift; sourceTree = "<group>"; };
+		3DF4E2432D27B5DD00FB1C65 /* ShPrecisionControlView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShPrecisionControlView.swift; sourceTree = "<group>"; };
+		3DF4E2452D28D72000FB1C65 /* BPMViewer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPMViewer.swift; sourceTree = "<group>"; };
+		3DF4E2472D28D83800FB1C65 /* BPMViewerController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BPMViewerController.swift; sourceTree = "<group>"; };
+		3DF5BAD42D28EAEF0002C604 /* ShPresetManagerView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShPresetManagerView.swift; sourceTree = "<group>"; };
 		3DF733462C3F7F3700DF9C83 /* Extensions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		3DFD8A8B2C377AB100A8B186 /* LaserSync.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LaserSync.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		3DFD8A8E2C377AB100A8B186 /* LaserSyncApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaserSyncApp.swift; sourceTree = "<group>"; };
@@ -108,8 +132,8 @@
 				3D2E2F0B2CF56310002E06CF /* GyroControlView.swift */,
 				3D2E2F0C2CF56310002E06CF /* MotionManager.swift */,
 				3D2E2F0D2CF56310002E06CF /* MovingHeadSettings.swift */,
-				3D9EBA282D13D62C00EE5C39 /* PresetManagerView.swift */,
-				3D9EBA2A2D13D9BF00EE5C39 /* PrecisionControlView.swift */,
+				3D9EBA282D13D62C00EE5C39 /* MhPresetManagerView.swift */,
+				3D9EBA2A2D13D9BF00EE5C39 /* MhPrecisionControlView.swift */,
 			);
 			path = MHSettings;
 			sourceTree = "<group>";
@@ -119,14 +143,24 @@
 			children = (
 				3D4F89CF2D120E580004AA46 /* Cue.swift */,
 				3D4F89CD2D120E190004AA46 /* SummaryView.swift */,
-				3D4F89CB2D120DF30004AA46 /* MovingHeadCueSetup.swift */,
-				3D4F89C92D120DAA0004AA46 /* LaserCueSetup.swift */,
+				3DF4E22D2D23935000FB1C65 /* LightSetup */,
 				3D2E2F1C2CF6A642002E06CF /* CueMakerView.swift */,
 				3D4F89D12D12177F0004AA46 /* EditCueView.swift */,
 				3D7483A32D19DBD8009302B3 /* SettingToggle.swift */,
 				3D9EBA2E2D16032400EE5C39 /* CueSettingsView.swift */,
 			);
 			path = CueMaker;
+			sourceTree = "<group>";
+		};
+		3D656D1F2D210F6400917D71 /* LightState */ = {
+			isa = PBXGroup;
+			children = (
+				3DF4E23F2D27A85500FB1C65 /* RFStrobeState.swift */,
+				3D656D202D210F7000917D71 /* SpiderHeadState.swift */,
+				3D489AE82D209F6F003AC2B0 /* LaserState.swift */,
+				3D489AEA2D20A0B0003AC2B0 /* MovingHeadState.swift */,
+			);
+			path = LightState;
 			sourceTree = "<group>";
 		};
 		3D7483A22D1773E5009302B3 /* Home */ = {
@@ -136,6 +170,11 @@
 				3D489AE42D207986003AC2B0 /* LaserHomePage.swift */,
 				3D7483A02D1773D1009302B3 /* HomeController.swift */,
 				3D78D3892C37AF6900123283 /* HomeView.swift */,
+				3D656D1D2D210DF000917D71 /* SpiderHeadHomePage.swift */,
+				3DF4E2332D23BE9A00FB1C65 /* MasterSliderPage.swift */,
+				3DF4E23B2D27898300FB1C65 /* RFDevicesPage.swift */,
+				3DF4E2452D28D72000FB1C65 /* BPMViewer.swift */,
+				3DF4E2472D28D83800FB1C65 /* BPMViewerController.swift */,
 			);
 			path = Home;
 			sourceTree = "<group>";
@@ -143,6 +182,7 @@
 		3D7FBC142CF24CCA0078F5E4 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				3DF5BAD32D28EAE40002C604 /* SHSettings */,
 				3D2E2F0E2CF56310002E06CF /* MHSettings */,
 				3DDEEFAB2CE96B7E00429363 /* SettingsView.swift */,
 				3D78D3852C3781BF00123283 /* LaserSettings.swift */,
@@ -150,6 +190,36 @@
 				3D4F89C82D120D980004AA46 /* CueMaker */,
 			);
 			path = Settings;
+			sourceTree = "<group>";
+		};
+		3DF4E22D2D23935000FB1C65 /* LightSetup */ = {
+			isa = PBXGroup;
+			children = (
+				3DF4E2372D25E68D00FB1C65 /* CustomViews.swift */,
+				3D4F89CB2D120DF30004AA46 /* MovingHeadCueSetup.swift */,
+				3D4F89C92D120DAA0004AA46 /* LaserCueSetup.swift */,
+				3DF4E2352D25E31300FB1C65 /* SpiderHeadCueSetup.swift */,
+			);
+			path = LightSetup;
+			sourceTree = "<group>";
+		};
+		3DF4E2302D23ABF500FB1C65 /* ColorTab */ = {
+			isa = PBXGroup;
+			children = (
+				3D74839E2D165174009302B3 /* ColorSelectionView.swift */,
+				3DF4E2312D23AC2400FB1C65 /* SpiderHeadLedSelector.swift */,
+			);
+			path = ColorTab;
+			sourceTree = "<group>";
+		};
+		3DF5BAD32D28EAE40002C604 /* SHSettings */ = {
+			isa = PBXGroup;
+			children = (
+				3DF5BAD42D28EAEF0002C604 /* ShPresetManagerView.swift */,
+				3DF4E2432D27B5DD00FB1C65 /* ShPrecisionControlView.swift */,
+				3DF4E2412D27B55A00FB1C65 /* SpiderHeadSettings.swift */,
+			);
+			path = SHSettings;
 			sourceTree = "<group>";
 		};
 		3DFD8A822C377AB100A8B186 = {
@@ -174,16 +244,14 @@
 				3D7483A22D1773E5009302B3 /* Home */,
 				3DFD8A8E2C377AB100A8B186 /* LaserSyncApp.swift */,
 				3DFD8A902C377AB100A8B186 /* ContentView.swift */,
-				3D78D37F2C37812700123283 /* LaserColorView.swift */,
-				3D74839E2D165174009302B3 /* ColorSelectionView.swift */,
+				3DF4E2302D23ABF500FB1C65 /* ColorTab */,
 				3D78D3812C37817500123283 /* PatternControlView.swift */,
 				3D78D3832C37819F00123283 /* ModeControlView.swift */,
 				3D116A722D028FFA002E0A37 /* CuePadView.swift */,
 				3DFD8A922C377AB300A8B186 /* Assets.xcassets */,
 				3DFD8A942C377AB300A8B186 /* Preview Content */,
 				3DA7ADAC2C3A3C6100D52F38 /* LaserConfig.swift */,
-				3D489AE82D209F6F003AC2B0 /* LaserState.swift */,
-				3D489AEA2D20A0B0003AC2B0 /* MovingHeadState.swift */,
+				3D656D1F2D210F6400917D71 /* LightState */,
 				3D4F89C62D11DE620004AA46 /* SharedStates.swift */,
 				3D7FBC142CF24CCA0078F5E4 /* Settings */,
 				3DDEEFB12CE99E0100429363 /* SocketIOManager.swift */,
@@ -280,30 +348,42 @@
 			buildActionMask = 2147483647;
 			files = (
 				3D78D3842C37819F00123283 /* ModeControlView.swift in Sources */,
+				3DF4E23C2D27898300FB1C65 /* RFDevicesPage.swift in Sources */,
+				3DF5BAD52D28EAEF0002C604 /* ShPresetManagerView.swift in Sources */,
 				3D4F89CE2D120E190004AA46 /* SummaryView.swift in Sources */,
 				3DF733472C3F7F3700DF9C83 /* Extensions.swift in Sources */,
+				3DF4E2402D27A85500FB1C65 /* RFStrobeState.swift in Sources */,
 				3D74839F2D165174009302B3 /* ColorSelectionView.swift in Sources */,
+				3D656D212D210F7600917D71 /* SpiderHeadState.swift in Sources */,
 				3D953A2F2CA60C9200E66C94 /* CustomSliderView.swift in Sources */,
+				3DF4E2442D27B5DD00FB1C65 /* ShPrecisionControlView.swift in Sources */,
 				3DFD8A912C377AB100A8B186 /* ContentView.swift in Sources */,
 				3D78D3822C37817500123283 /* PatternControlView.swift in Sources */,
-				3D78D3802C37812700123283 /* LaserColorView.swift in Sources */,
-				3D9EBA292D13D62C00EE5C39 /* PresetManagerView.swift in Sources */,
+				3D9EBA292D13D62C00EE5C39 /* MhPresetManagerView.swift in Sources */,
 				3D4F89D02D120E580004AA46 /* Cue.swift in Sources */,
 				3DFD8A8F2C377AB100A8B186 /* LaserSyncApp.swift in Sources */,
+				3D656D1E2D210DF000917D71 /* SpiderHeadHomePage.swift in Sources */,
+				3DF4E2462D28D72000FB1C65 /* BPMViewer.swift in Sources */,
 				3D489AE72D207A27003AC2B0 /* MovingHeadHomePage.swift in Sources */,
 				3D953A2B2CA3B93900E66C94 /* Objects.swift in Sources */,
 				3D953A2D2CA4E2B600E66C94 /* TapDetector.swift in Sources */,
+				3DF4E2342D23BE9A00FB1C65 /* MasterSliderPage.swift in Sources */,
 				3DDEEFAE2CE96EE700429363 /* ServerSettings.swift in Sources */,
 				3D7483A42D19DBD8009302B3 /* SettingToggle.swift in Sources */,
-				3D9EBA2B2D13D9BF00EE5C39 /* PrecisionControlView.swift in Sources */,
+				3D9EBA2B2D13D9BF00EE5C39 /* MhPrecisionControlView.swift in Sources */,
+				3DF4E2382D25E68D00FB1C65 /* CustomViews.swift in Sources */,
 				3D4F89C72D11DE620004AA46 /* SharedStates.swift in Sources */,
+				3DF4E2322D23AC2400FB1C65 /* SpiderHeadLedSelector.swift in Sources */,
 				3D489AE92D209F7B003AC2B0 /* LaserState.swift in Sources */,
+				3DF4E2362D25E31300FB1C65 /* SpiderHeadCueSetup.swift in Sources */,
 				3D4F89CA2D120DB60004AA46 /* LaserCueSetup.swift in Sources */,
 				3D7483A12D1773DE009302B3 /* HomeController.swift in Sources */,
 				3D2E2F102CF56310002E06CF /* MotionManager.swift in Sources */,
+				3DF4E2482D28D83800FB1C65 /* BPMViewerController.swift in Sources */,
 				3D78D38A2C37AF6900123283 /* HomeView.swift in Sources */,
 				3D4F89D22D12177F0004AA46 /* EditCueView.swift in Sources */,
 				3DA7ADAD2C3A3C6100D52F38 /* LaserConfig.swift in Sources */,
+				3DF4E2422D27B56200FB1C65 /* SpiderHeadSettings.swift in Sources */,
 				3DDEEFB22CE99E0100429363 /* SocketIOManager.swift in Sources */,
 				3D116A732D028FFA002E0A37 /* CuePadView.swift in Sources */,
 				3D2E2F0F2CF56310002E06CF /* GyroControlView.swift in Sources */,

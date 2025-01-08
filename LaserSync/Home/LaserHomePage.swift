@@ -18,12 +18,14 @@ struct LaserHomePage: View {
                 Text("Laser")
                     .foregroundStyle(.white)
                     .font(.title2)
+                    .fontWeight(.bold)
                     .padding(.horizontal, 10)
                     .padding(.vertical, 2)
                     .background {
                         RoundedRectangle(cornerRadius: 15)
-                            .fill(.cyan)
+                            .fill(.red)
                     }
+                
                 LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 20), count: 2), spacing: 20) {
                     // Color
                     Button(action: {

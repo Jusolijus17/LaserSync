@@ -54,6 +54,14 @@ class SocketIOManager {
         }
         socket.emit("gyro_data", ["pan": pan, "tilt": tilt])
     }
+    
+    func sendShPositionData(leftAngle: Double, rightAngle: Double) {
+        guard let socket = socket else {
+            print("Socket is not configured")
+            return
+        }
+        socket.emit("sh_position_data", ["leftAngle": leftAngle, "rightAngle": rightAngle])
+    }
 }
 
 extension LaserConfig {
@@ -63,5 +71,9 @@ extension LaserConfig {
 
     func sendGyroData(pan: Double, tilt: Double) {
         SocketIOManager.shared.sendGyroData(pan: pan, tilt: tilt)
+    }
+    
+    func sendShPositionData(leftAngle: Double, rightAngle: Double) {
+        SocketIOManager.shared.sendShPositionData(leftAngle: leftAngle, rightAngle: rightAngle)
     }
 }

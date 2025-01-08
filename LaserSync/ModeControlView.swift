@@ -16,7 +16,7 @@ struct ModeControlView: View {
             
             Spacer()
             
-            LightImage(light: .both, selectable: true, selection: $selectedLights)
+            LightImage(light: .all, width: 100, height: 100, selectable: true, selection: $selectedLights)
             
             Spacer()
             
@@ -61,43 +61,45 @@ struct ModeControlView: View {
     func change(_ mode: LightMode) {
         if selectedLights.contains(.laser) {
             laserConfig.laser.mode = mode
-            laserConfig.setModeFor(.laser)
+            laserConfig.setModeFor(.laser, mode: mode)
         }
         if selectedLights.contains(.movingHead) {
             if mode == .blackout {
                 laserConfig.turnOffMovingHead()
             } else {
                 laserConfig.movingHead.mode = mode
-                laserConfig.setModeFor(.movingHead)
+                laserConfig.setModeFor(.movingHead, mode: mode)
             }
             
+        }
+        if selectedLights.contains(.spiderHead) {
+            laserConfig.spiderHead.mode = mode
+            laserConfig.setModeFor(.spiderHead, mode: mode)
+        }
+        if selectedLights.contains(.strobe) {
+            laserConfig.rfStrobe.mode = mode
+            laserConfig.setModeFor(.strobe, mode: mode)
         }
     }
     
     func toggleStrobeMode() {
+        let shouldActivateStrobe = selectedLights.contains { !laserConfig.includedLightsStrobe.contains($0) }
         for light in selectedLights {
-            if laserConfig.includedLightsStrobe.contains(light) {
-                laserConfig.includedLightsStrobe.remove(light)
-            } else {
+            if shouldActivateStrobe {
                 laserConfig.includedLightsStrobe.insert(light)
+            } else {
+                laserConfig.includedLightsStrobe.remove(light)
             }
         }
         laserConfig.setStrobeMode()
     }
     
     private func isModeEnabled(mode: LightMode) -> Bool {
-        if selectedLights.contains(.movingHead) && selectedLights.contains(.laser) {
-            if laserConfig.laser.mode == laserConfig.movingHead.mode {
-                return laserConfig.laser.mode == mode
-            } else {
-                return false
-            }
-        } else if selectedLights.contains(.laser) {
-            return laserConfig.laser.mode == mode
-        } else if selectedLights.contains(.movingHead) {
-            return laserConfig.movingHead.mode == mode
+        guard !selectedLights.isEmpty else { return false }
+        let selectedLightsModes = selectedLights.map { light in
+            laserConfig.mode(for: light)
         }
-        return false
+        return selectedLightsModes.allSatisfy { $0 == mode }
     }
     
     private func isStrobeActive() -> Bool {

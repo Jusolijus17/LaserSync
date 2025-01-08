@@ -9,10 +9,14 @@ import SwiftUI
 
 struct Cue: Identifiable, Codable {
     var id = UUID()
-    var color: Color = .red
+    var color: Color = .green
     var name: String = ""
     var type: CueType = .definitive
     var affectedLights: Set<Light> = []
+    var changeBpmMultiplier: Bool = false
+    var bpmMultiplier: Double = 1.0
+    var changeBreatheMode: Bool = false
+    var breatheMode: BreatheMode = .fast
 
     // Laser
     var laser = LaserState()
@@ -21,13 +25,23 @@ struct Cue: Identifiable, Codable {
     // Moving Head
     var movingHead = MovingHeadState()
     var movingHeadSettings: Set<LightSettings> = []
+    
+    // Spider Head
+    var spiderHead = SpiderHeadState()
+    var spiderHeadSettings: Set<LightSettings> = []
+    
+    // All
+    var includedLightsStrobe: Set<Light> = []
+    var includedLightsBreathe: Set<Light> = []
 }
 
 enum LightSettings: String, Codable, CaseIterable {
+    // All
     case color
     case strobe
     
     // Moving Head
+    case gobo
     case scene
     case position
     case strobeSpeed
@@ -35,6 +49,12 @@ enum LightSettings: String, Codable, CaseIterable {
     
     // Laser
     case pattern
+    case vAdjust
+    case hAnimation
+    case vAnimation
+    
+    // Spider Head
+    case chaseSpeed
 }
 
 extension Cue {

@@ -7,7 +7,7 @@
 
 import SwiftUI
 
-struct PrecisionControlView: View {
+struct MhPrecisionControlView: View {
     @EnvironmentObject private var laserConfig: LaserConfig
     @State private var circularAngle: Angle = .degrees(0)
     @State private var verticalOffset: CGFloat = 0
@@ -243,7 +243,7 @@ struct VerticalJoystickView: View {
 
 #Preview {
     NavigationView {
-        PrecisionControlView()
+        MhPrecisionControlView()
             .environmentObject(LaserConfig())
     }
 }

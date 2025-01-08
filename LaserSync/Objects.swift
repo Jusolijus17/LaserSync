@@ -11,20 +11,19 @@ import SwiftUI
 enum Light: String, Codable, CaseIterable, Identifiable {
     case laser
     case movingHead
-    case both
+    case spiderHead
+    case strobe
+    case all
     case none
     
     var id: String { rawValue }
-    
-    static var displayableCases: [Light] {
-        return [.laser, .movingHead]
-    }
 }
 
 enum CueMakerStep {
     case selectLights
     case laserSettings
     case movingHeadSettings
+    case spiderHeadSettings
     case summary
 }
 
@@ -35,7 +34,7 @@ enum CueType: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-enum MovingHeadScene: String, Codable, CaseIterable, Identifiable {
+enum LightScene: String, Codable, CaseIterable, Identifiable {
     case slow
     case medium
     case fast
@@ -44,31 +43,66 @@ enum MovingHeadScene: String, Codable, CaseIterable, Identifiable {
     var id: String { return self.rawValue }
 }
 
-protocol LightColors: Codable, Identifiable, CaseIterable {
+protocol LightColors: Codable, Identifiable, CaseIterable, Hashable {
     var id: String { get }
+    var colorValue: Color { get }
 }
 
-enum CommonColor: String, LightColors {
+enum StrobeColor: String, LightColors {
+    case multicolor
     case red
-    case blue
     case green
-    case pink
-    case cyan
+    case white
     case yellow
+    case pink
+    case purple
+    case blue
     
     var id: String { return self.rawValue }
 }
 
-extension CommonColor {
-    var color: Color {
+extension StrobeColor {
+    var colorValue: Color {
         switch self {
+        case .multicolor: return .clear
         case .red: return .red
         case .blue: return .blue
         case .green: return .green
-        case .pink: return .pink
-        case .cyan: return .cyan
+        case .white: return .white
         case .yellow: return .yellow
+        case .pink: return .pink
+        case .purple: return .purple
         }
+    }
+    
+    static func from(color: Color) -> StrobeColor {
+        return StrobeColor.allCases.first(where: { $0.colorValue == color }) ?? .red
+    }
+}
+
+enum SpiderHeadColor: String, LightColors {
+    case multicolor
+    case red
+    case blue
+    case green
+    case white
+    
+    var id: String { return self.rawValue }
+}
+
+extension SpiderHeadColor {
+    var colorValue: Color {
+        switch self {
+        case .multicolor: return .clear
+        case .red: return .red
+        case .blue: return .blue
+        case .green: return .green
+        case .white: return .white
+        }
+    }
+    
+    static func from(color: Color) -> SpiderHeadColor {
+        return SpiderHeadColor.allCases.first(where: { $0.colorValue == color }) ?? .red
     }
 }
 
@@ -219,6 +253,11 @@ extension GyroPreset {
         currentPresets.append(preset)
         savePresets(currentPresets)
     }
+}
+
+enum BreatheMode: String, Codable, CaseIterable {
+    case slow
+    case fast
 }
 
 

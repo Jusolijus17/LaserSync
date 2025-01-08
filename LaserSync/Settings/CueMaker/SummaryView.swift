@@ -13,8 +13,11 @@ struct SummaryView: View {
     @State private var showingAlert = false
     @Environment(\.dismiss) private var dismiss
     
+    @State private var bpmMultiplier: Double = 1
+    let multipliers: [Double] = [1/8, 1/4, 1/2, 1, 2, 4, 8, 16]
+    
     var onConfirm: () -> Void = {}
-    var onEditSection: (String) -> Void = { _ in }
+    var onEditSection: (CueMakerStep) -> Void = { _ in }
     
     var body: some View {
         GeometryReader { _ in
@@ -29,7 +32,7 @@ struct SummaryView: View {
                                 details: getLaserDetails()
                             )
                             .onTapGesture {
-                                onEditSection("Laser")
+                                onEditSection(.laserSettings)
                             }
                         }
                         
@@ -41,8 +44,16 @@ struct SummaryView: View {
                                 details: getMovingHeadDetails()
                             )
                             .onTapGesture {
-                                onEditSection("Moving Head")
+                                onEditSection(.movingHeadSettings)
                             }
+                        }
+                        
+                        // Section Spider Head
+                        if cue.affectedLights.contains(.spiderHead) {
+                            SummaryLightSection(iconName: "spider_head_icon", lightName: "Spider Head", details: getSpiderHeadDetails())
+                                .onTapGesture {
+                                    onEditSection(.spiderHeadSettings)
+                                }
                         }
                     }
                     .padding()
@@ -52,6 +63,32 @@ struct SummaryView: View {
                     Spacer()
                     
                     VStack(alignment: .leading) {
+                        Toggle(isOn: $cue.changeBpmMultiplier) {
+                            Text("BPM Multiplier")
+                                .font(.title2)
+                        }
+                        .padding(.horizontal)
+                        
+                        BpmMultiplierSelector(bpmMultiplier: $bpmMultiplier)
+                            .padding([.horizontal, .bottom])
+                            .disabledStyle(!cue.changeBpmMultiplier)
+                        
+                        Toggle(isOn: $cue.changeBreatheMode) {
+                            Text("Breathe Mode")
+                                .font(.title2)
+                        }
+                        .padding(.horizontal)
+                        
+                        Picker("Mode", selection: $cue.breatheMode) {
+                            ForEach(BreatheMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue.capitalized)
+                                    .tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
+                        .disabledStyle(!cue.changeBreatheMode)
+                        
                         Text("Cue type")
                             .font(.title2)
                             .padding(.horizontal)
@@ -63,11 +100,12 @@ struct SummaryView: View {
                         }
                         .pickerStyle(.segmented)
                         .padding(.horizontal)
+                        
                         Text("Cue color")
                             .font(.title2)
                             .padding(.horizontal)
-                        let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .white]
-                        ColorSelectorView(selectedColor: $cue.color, colors: colors)
+                        let colors: [Color] = [.green, .yellow, .red, .blue, .orange, .purple, .pink, .white]
+                        CueColorSelector(selectedColor: $cue.color, colors: colors)
                     }
                 }
                 
@@ -87,6 +125,7 @@ struct SummaryView: View {
             }
             .alert("New Cue", isPresented: $showingAlert) {
                 TextField("Cue Name", text: $cue.name)
+                    .autocorrectionDisabled()
                 Button("Save", action: {
                     if cue.name != "" {
                         onConfirm()
@@ -184,6 +223,48 @@ struct SummaryView: View {
         
         return details
     }
+    
+    func getSpiderHeadDetails() -> [(String, String)] {
+        var details: [(String, String)] = []
+        
+        // Mode
+        details.append(("Mode", cue.spiderHead.mode.rawValue.capitalized))
+        
+        // Blackout
+        if cue.spiderHead.mode == .blackout {
+            return details
+        }
+        
+        if cue.spiderHead.mode != .manual {
+            details.append(("Scene", "Off"))
+            details.append(("Color", "Auto"))
+            details.append(("Strobe", "Auto"))
+            details.append(("Brightness", "Auto"))
+            return details
+        }
+        
+        // Scene
+        let scene = cue.spiderHead.scene.rawValue.capitalized
+        details.append(("Scene", scene))
+        
+        // Position
+//        let position = "\(cue.movingHead.positionPreset?.name ?? "Off")"
+//        details.append(("Position", position))
+        
+        // Color
+        let color = cue.spiderHead.color.rawValue.capitalized
+        details.append(("Color", color))
+        
+        // Strobe
+        let strobe = cue.spiderHead.strobeSpeed == 0 ? "Off" : "\(Int(cue.spiderHead.strobeSpeed))%"
+        details.append(("Strobe", strobe))
+        
+        // Brightness
+        let brightness = cue.spiderHead.brightness == 0 ? "Off" : "\(Int(cue.spiderHead.brightness))%"
+        details.append(("Brightness", brightness))
+        
+        return details
+    }
 }
 
 // Section individuelle pour chaque lumière
@@ -227,7 +308,7 @@ struct SummaryLightSection: View {
     }
 }
 
-struct ColorSelectorView: View {
+struct CueColorSelector: View {
     @Binding var selectedColor: Color
     let colors: [Color]
 
@@ -259,6 +340,48 @@ struct ColorSelectorView: View {
             }
         }
         .padding(.horizontal)
+    }
+}
+
+struct BpmMultiplierSelector: View {
+    @Binding var bpmMultiplier: Double
+    
+    // Liste des multiplicateurs possibles
+    let multipliers: [Double] = [1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0, 2.0, 4.0, 8.0, 16.0]
+    
+    var body: some View {
+        Stepper {
+            // Action pour le bouton "+"
+            if let currentIndex = multipliers.firstIndex(of: bpmMultiplier),
+               currentIndex < multipliers.count - 1 {
+                bpmMultiplier = multipliers[currentIndex + 1]
+            }
+        } onDecrement: {
+            // Action pour le bouton "-"
+            if let currentIndex = multipliers.firstIndex(of: bpmMultiplier),
+               currentIndex > 0 {
+                bpmMultiplier = multipliers[currentIndex - 1]
+            }
+        } label: {
+            // Custom label
+            Text(formattedMultiplier(bpmMultiplier)) // Utilise une fonction pour formater
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(bpmMultiplier != 1 ? .yellow : .white)
+                .padding(.leading)
+        }
+    }
+    
+    // Fonction pour formater les valeurs
+    func formattedMultiplier(_ value: Double) -> String {
+        if value < 1 {
+            // Convertir les fractions en "8÷"
+            let denominator = Int(1.0 / value)
+            return "\(denominator)÷"
+        } else {
+            // Convertir les multiplicateurs en "4x"
+            return "\(Int(value))x"
+        }
     }
 }
 

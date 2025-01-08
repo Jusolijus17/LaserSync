@@ -21,15 +21,14 @@ struct LaserSettings: View {
                                 .onChange(of: laserConfig.laser.verticalAdjust) {
                                     laserConfig.setVerticalAdjust()
                                 }
-                            Button(action: laserConfig.resetVerticalAdjust) {
-                                Text("Reset")
-                                    .frame(width: 50, height: 40)
-                                    .background(Color.blue)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
-                                    .font(.caption)
-                            }
+                            Text("\(Int(laserConfig.laser.verticalAdjust - 63))%")
+                                .frame(width: 50)
                         }
+                        Button(action: laserConfig.resetVerticalAdjust) {
+                            Text("Reset")
+                                .frame(maxWidth: .infinity)
+                        }
+                        .buttonStyle(.borderedProminent)
                     }
                 }
 
@@ -43,8 +42,8 @@ struct LaserSettings: View {
                         HStack {
                             Slider(value: $laserConfig.laser.horizontalAnimationSpeed, in: 127...190, step: 1)
                                 .disabled(!laserConfig.laser.horizontalAnimationEnabled)
-                            Text("\(Int(laserConfig.laser.horizontalAnimationSpeed))%")
-                                .frame(width: 50)
+                            Text("\(Int(laserConfig.laser.horizontalAnimationSpeed - 127))%")
+                                .frame(width: 40)
                         }
                         .onChange(of: laserConfig.laser.horizontalAnimationSpeed) {
                             laserConfig.setHorizontalAnimation()
@@ -60,8 +59,8 @@ struct LaserSettings: View {
                         HStack {
                             Slider(value: $laserConfig.laser.verticalAnimationSpeed, in: 127...190, step: 1)
                                 .disabled(!laserConfig.laser.verticalAnimationEnabled)
-                            Text("\(Int(laserConfig.laser.verticalAnimationSpeed))%")
-                                .frame(width: 50)
+                            Text("\(Int(laserConfig.laser.verticalAnimationSpeed - 127))%")
+                                .frame(width: 40)
                         }
                         .onChange(of: laserConfig.laser.verticalAnimationSpeed) {
                             laserConfig.setVerticalAnimation()

@@ -1,18 +1,18 @@
 //
-//  PresetManagerView.swift
+//  MhPresetManagerView.swift
 //  LaserSync
 //
-//  Created by Justin Lefrançois on 2024-12-18.
+//  Created by Justin Lefrançois on 2025-01-03.
 //
 
 import SwiftUI
 
-struct PresetManagerView: View {
+struct ShPresetManagerView: View {
     @EnvironmentObject private var laserConfig: LaserConfig
-    @State private var presets: [GyroPreset] = []
+    @State private var presets: [ShPositionPreset] = []
     @State private var showingAlert = false
     @State private var newPresetName = ""
-    @State private var presetToRename: GyroPreset?
+    @State private var presetToRename: ShPositionPreset?
 
     @State private var showingErrorAlert = false
     @State private var errorMessage = ""
@@ -24,13 +24,13 @@ struct PresetManagerView: View {
             } else {
                 ForEach($presets) { $preset in
                     Button {
-                        laserConfig.sendGyroData(pan: preset.pan, tilt: preset.tilt)
+                        laserConfig.sendShPositionData(leftAngle: preset.leftAngle, rightAngle: preset.rightAngle)
                     } label: {
                         VStack(alignment: .leading) {
                             Text(preset.name)
                                 .font(.headline)
                                 .foregroundStyle(.white)
-                            Text("Pan: \(Int(preset.pan))°, Tilt: \(Int(preset.tilt))°")
+                            Text("Left: \(Int(preset.leftAngle))°, Right: \(Int(preset.rightAngle))°")
                                 .font(.subheadline)
                                 .foregroundStyle(.gray)
                         }
@@ -70,13 +70,13 @@ struct PresetManagerView: View {
             Text(errorMessage)
         }
         .onAppear {
-            presets = GyroPreset.loadPresets()
+            presets = ShPositionPreset.loadPresets()
         }
     }
 
     private func deletePreset(at offsets: IndexSet) {
         presets.remove(atOffsets: offsets)
-        GyroPreset.savePresets(presets)
+        ShPositionPreset.savePresets(presets)
     }
 
     private func savePreset() {
@@ -91,7 +91,7 @@ struct PresetManagerView: View {
         } else {
             if let index = presets.firstIndex(where: { $0.id == presetToRename.id }) {
                 presets[index].name = newPresetName
-                GyroPreset.savePresets(presets)
+                ShPositionPreset.savePresets(presets)
             }
         }
     }
@@ -99,10 +99,10 @@ struct PresetManagerView: View {
 
 #Preview {
     NavigationView {
-        PresetManagerView()
+        ShPresetManagerView()
             .environmentObject(LaserConfig())
             .onAppear {
-                GyroPreset.savePresets([GyroPreset(id: UUID(), name: "Test", pan: 1.5, tilt: 2.2)])
+                ShPositionPreset.savePresets([ShPositionPreset(id: UUID(), name: "Test", leftAngle: 100, rightAngle: 150)])
             }
     }
 }

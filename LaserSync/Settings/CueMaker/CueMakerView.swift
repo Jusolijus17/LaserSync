@@ -18,31 +18,58 @@ struct CueMakerView: View {
                 SelectLightsView(
                     cue: $cue,
                     onNext: {
-                        cue.affectedLights.contains(.laser) ? currentStep = .laserSettings : (cue.affectedLights.contains(.movingHead) ? (currentStep = .movingHeadSettings) : (currentStep = .selectLights))
+                        if cue.affectedLights.contains(.laser) {
+                            currentStep = .laserSettings
+                        } else if cue.affectedLights.contains(.movingHead) {
+                            currentStep = .movingHeadSettings
+                        } else if cue.affectedLights.contains(.spiderHead) {
+                            currentStep = .spiderHeadSettings
+                        } else {
+                            currentStep = .summary
+                        }
                     }
                 )
             case .laserSettings:
                 LaserCueSetup(
                     cue: $cue,
-                    onNext: { cue.affectedLights.contains(.movingHead) ? (currentStep = .movingHeadSettings) : (currentStep = .summary) }
+                    onNext: {
+                        if cue.affectedLights.contains(.movingHead) {
+                            currentStep = .movingHeadSettings
+                        } else if cue.affectedLights.contains(.spiderHead) {
+                            currentStep = .spiderHeadSettings
+                        } else {
+                            currentStep = .summary
+                        }
+                    }
                 )
                 .navigationTitle("Laser settings")
                 .navigationBarTitleDisplayMode(.inline)
             case .movingHeadSettings:
                 MovingHeadCueSetup(
                     cue: $cue,
-                    onNext: { currentStep = .summary }
+                    onNext: {
+                        if cue.affectedLights.contains(.spiderHead) {
+                            currentStep = .spiderHeadSettings
+                        } else {
+                            currentStep = .summary
+                        }
+                    }
                 )
                 .navigationTitle("Moving Head settings")
+                .navigationBarTitleDisplayMode(.inline)
+            case .spiderHeadSettings:
+                SpiderHeadCueSetup(cue: $cue) {
+                    currentStep = .summary
+                }
+                .navigationTitle("Spider Head settings")
                 .navigationBarTitleDisplayMode(.inline)
             case .summary:
                 SummaryView(cue: $cue, onConfirm: {
                     cue.save()
                     currentStep = .selectLights
-                }, onEditSection: { section in
-                    navigateToStep(for: section)
-                }
-                )
+                }, onEditSection: { step in
+                    navigateTo(step)
+                })
                 .navigationTitle("Summary")
                 .navigationBarTitleDisplayMode(.inline)
             }
@@ -50,19 +77,8 @@ struct CueMakerView: View {
         .navigationTitle("Cue Maker")
     }
     
-    private func navigateToStep(for section: String) {
-        switch section {
-        case "Laser":
-            if cue.affectedLights.contains(.laser) {
-                currentStep = .laserSettings
-            }
-        case "Moving Head":
-            if cue.affectedLights.contains(.movingHead) {
-                currentStep = .movingHeadSettings
-            }
-        default:
-            break
-        }
+    private func navigateTo(_ step: CueMakerStep) {
+        currentStep = step
     }
 }
 
@@ -79,17 +95,20 @@ struct SelectLightsView: View {
                 .bold()
                 .font(.title)
             
-            HStack(spacing: 20) {
-                LightSelectionButton(
-                    title: "Laser",
-                    isSelected: cue.affectedLights.binding(for: .laser, in: $cue.affectedLights),
-                    imageName: "laser_icon"
-                )
-                LightSelectionButton(
-                    title: "Moving Head",
-                    isSelected: cue.affectedLights.binding(for: .movingHead, in: $cue.affectedLights),
-                    imageName: "moving_head_icon"
-                )
+            VStack(spacing: 20) {
+                HStack(spacing: 20) {
+                    LightSelectionButton(
+                        title: "Laser",
+                        isSelected: cue.affectedLights.binding(for: .laser, in: $cue.affectedLights),
+                        imageName: "laser_icon"
+                    )
+                    LightSelectionButton(
+                        title: "Moving Head",
+                        isSelected: cue.affectedLights.binding(for: .movingHead, in: $cue.affectedLights),
+                        imageName: "moving_head_icon"
+                    )
+                }
+                LightSelectionButton(title: "Spider Head", isSelected: cue.affectedLights.binding(for: .spiderHead, in: $cue.affectedLights), imageName: "spider_head_icon")
             }
             
             Spacer()
