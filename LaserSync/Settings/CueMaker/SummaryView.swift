@@ -13,6 +13,9 @@ struct SummaryView: View {
     @State private var showingAlert = false
     @Environment(\.dismiss) private var dismiss
     
+    @State private var bpmMultiplier: Double = 1
+    let multipliers: [Double] = [1/8, 1/4, 1/2, 1, 2, 4, 8, 16]
+    
     var onConfirm: () -> Void = {}
     var onEditSection: (CueMakerStep) -> Void = { _ in }
     
@@ -60,6 +63,32 @@ struct SummaryView: View {
                     Spacer()
                     
                     VStack(alignment: .leading) {
+                        Toggle(isOn: $cue.changeBpmMultiplier) {
+                            Text("BPM Multiplier")
+                                .font(.title2)
+                        }
+                        .padding(.horizontal)
+                        
+                        BpmMultiplierSelector(bpmMultiplier: $bpmMultiplier)
+                            .padding([.horizontal, .bottom])
+                            .disabledStyle(!cue.changeBpmMultiplier)
+                        
+                        Toggle(isOn: $cue.changeBreatheMode) {
+                            Text("Breathe Mode")
+                                .font(.title2)
+                        }
+                        .padding(.horizontal)
+                        
+                        Picker("Mode", selection: $cue.breatheMode) {
+                            ForEach(BreatheMode.allCases, id: \.self) { mode in
+                                Text(mode.rawValue.capitalized)
+                                    .tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(.horizontal)
+                        .disabledStyle(!cue.changeBreatheMode)
+                        
                         Text("Cue type")
                             .font(.title2)
                             .padding(.horizontal)
@@ -71,10 +100,11 @@ struct SummaryView: View {
                         }
                         .pickerStyle(.segmented)
                         .padding(.horizontal)
+                        
                         Text("Cue color")
                             .font(.title2)
                             .padding(.horizontal)
-                        let colors: [Color] = [.red, .blue, .green, .yellow, .orange, .purple, .pink, .white]
+                        let colors: [Color] = [.green, .yellow, .red, .blue, .orange, .purple, .pink, .white]
                         CueColorSelector(selectedColor: $cue.color, colors: colors)
                     }
                 }
@@ -95,6 +125,7 @@ struct SummaryView: View {
             }
             .alert("New Cue", isPresented: $showingAlert) {
                 TextField("Cue Name", text: $cue.name)
+                    .autocorrectionDisabled()
                 Button("Save", action: {
                     if cue.name != "" {
                         onConfirm()
@@ -309,6 +340,48 @@ struct CueColorSelector: View {
             }
         }
         .padding(.horizontal)
+    }
+}
+
+struct BpmMultiplierSelector: View {
+    @Binding var bpmMultiplier: Double
+    
+    // Liste des multiplicateurs possibles
+    let multipliers: [Double] = [1.0/8.0, 1.0/4.0, 1.0/2.0, 1.0, 2.0, 4.0, 8.0, 16.0]
+    
+    var body: some View {
+        Stepper {
+            // Action pour le bouton "+"
+            if let currentIndex = multipliers.firstIndex(of: bpmMultiplier),
+               currentIndex < multipliers.count - 1 {
+                bpmMultiplier = multipliers[currentIndex + 1]
+            }
+        } onDecrement: {
+            // Action pour le bouton "-"
+            if let currentIndex = multipliers.firstIndex(of: bpmMultiplier),
+               currentIndex > 0 {
+                bpmMultiplier = multipliers[currentIndex - 1]
+            }
+        } label: {
+            // Custom label
+            Text(formattedMultiplier(bpmMultiplier)) // Utilise une fonction pour formater
+                .font(.title2)
+                .fontWeight(.bold)
+                .foregroundStyle(bpmMultiplier != 1 ? .yellow : .white)
+                .padding(.leading)
+        }
+    }
+    
+    // Fonction pour formater les valeurs
+    func formattedMultiplier(_ value: Double) -> String {
+        if value < 1 {
+            // Convertir les fractions en "8÷"
+            let denominator = Int(1.0 / value)
+            return "\(denominator)÷"
+        } else {
+            // Convertir les multiplicateurs en "4x"
+            return "\(Int(value))x"
+        }
     }
 }
 

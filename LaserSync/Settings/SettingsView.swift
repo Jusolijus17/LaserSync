@@ -35,6 +35,17 @@ struct SettingsView: View {
                         }
                     }
                     
+                    NavigationLink(destination:
+                                    SpiderHeadSettings()
+                        .environmentObject(motionManager)
+                    ) {
+                        settingsRow(title: "Spider Head") {
+                            Image("spider_head_icon")
+                                .resizable()
+                                .scaledToFit()
+                        }
+                    }
+                    
                     Button {
                         sharedStates.showCueMaker = true
                     } label: {

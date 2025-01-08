@@ -16,6 +16,7 @@ struct SpiderHeadState: Codable {
     var lightChaseSpeed: Double = 0
     var brightness: Double = 0
     var bpmSyncModes: Set<BPMSyncMode> = []
+    var position: ShPositionPreset?
     
     init() {
         self.ledSelection = [
@@ -61,17 +62,17 @@ extension SpiderHeadState {
 }
 
 
-struct ShPosition: Codable, Identifiable {
+struct ShPositionPreset: Codable, Identifiable {
     var id: UUID
     var name: String
     let leftAngle: Double
     let rightAngle: Double
 }
 
-extension ShPosition {
+extension ShPositionPreset {
     static let presetsKey = "headPositions"
     
-    static func savePresets(_ presets: [ShPosition]) {
+    static func savePresets(_ presets: [ShPositionPreset]) {
         do {
             let data = try JSONEncoder().encode(presets)
             UserDefaults.standard.set(data, forKey: presetsKey)
@@ -80,19 +81,19 @@ extension ShPosition {
         }
     }
     
-    static func loadPresets() -> [ShPosition] {
+    static func loadPresets() -> [ShPositionPreset] {
         guard let data = UserDefaults.standard.data(forKey: presetsKey) else {
             return []
         }
         do {
-            return try JSONDecoder().decode([ShPosition].self, from: data)
+            return try JSONDecoder().decode([ShPositionPreset].self, from: data)
         } catch {
             print("Erreur lors du chargement des presets : \(error)")
             return []
         }
     }
     
-    static func addPreset(_ preset: ShPosition) throws {
+    static func addPreset(_ preset: ShPositionPreset) throws {
         var currentPresets = loadPresets()
         
         // Vérification du nom

@@ -255,4 +255,9 @@ extension GyroPreset {
     }
 }
 
+enum BreatheMode: String, Codable, CaseIterable {
+    case slow
+    case fast
+}
+
 

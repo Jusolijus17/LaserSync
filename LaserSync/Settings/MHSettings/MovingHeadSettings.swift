@@ -22,7 +22,7 @@ struct MovingHeadSettings: View {
                 }
             }
             Section(header: Text("Settings").font(.headline)) {
-                NavigationLink(destination: PresetManagerView()) {
+                NavigationLink(destination: MhPresetManagerView()) {
                     Text("Preset manager")
                 }
                 NavigationLink {

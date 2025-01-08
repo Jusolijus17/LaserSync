@@ -21,6 +21,7 @@ class LaserConfig: ObservableObject {
     private var previousLaserState: LaserState?
     private var previousMovingHeadState: MovingHeadState?
     private var previousIncludedLightStrobe: Set<Light>?
+    @Published var breatheMode: BreatheMode = .fast
     
     // Connection settings
     @Published var serverIp: String
@@ -215,6 +216,13 @@ class LaserConfig: ObservableObject {
     
     private func applyCue(_ cue: Cue?) {
         guard let cue else { return }
+        
+        if cue.changeBpmMultiplier {
+            self.bpmMultiplier = cue.bpmMultiplier
+        }
+        if cue.changeBreatheMode {
+            self.breatheMode = cue.breatheMode
+        }
         
         // Définir une fonction générique pour gérer les strobe et breathe
         func updateIncludedLights(_ light: Light, settings: Set<LightSettings>, affectedList: inout Set<Light>, cueList: Set<Light>) {
@@ -658,6 +666,17 @@ class LaserConfig: ObservableObject {
             // Set back vertical adjust to pre-animation setting
             self.setVerticalAdjust()
         }
+    }
+    
+    func setSlowBreathe(mode: BreatheMode) {
+        guard let url = URL(string: "\(self.baseUrl)/set_slow_breathe") else { return }
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.setValue("application/json", forHTTPHeaderField: "Content-Type")
+        let body = ["isOn": mode == .slow]
+        request.httpBody = try? JSONSerialization.data(withJSONObject: body, options: [])
+        
+        URLSession.shared.dataTask(with: request).resume()
     }
     
     // MARK: - BPM sync

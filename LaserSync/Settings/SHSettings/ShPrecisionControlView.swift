@@ -81,7 +81,7 @@ struct ShPrecisionControlView: View {
     private func savePreset() {
         guard !newPresetName.isEmpty else { return }
 
-        let newPreset = ShPosition(
+        let newPreset = ShPositionPreset(
             id: UUID(),
             name: newPresetName,
             leftAngle: Double(leftOffset),
@@ -89,7 +89,7 @@ struct ShPrecisionControlView: View {
         )
 
         do {
-            try ShPosition.addPreset(newPreset)
+            try ShPositionPreset.addPreset(newPreset)
             newPresetName = ""
         } catch {
             errorMessage = error.localizedDescription

@@ -9,10 +9,14 @@ import SwiftUI
 
 struct Cue: Identifiable, Codable {
     var id = UUID()
-    var color: Color = .red
+    var color: Color = .green
     var name: String = ""
     var type: CueType = .definitive
     var affectedLights: Set<Light> = []
+    var changeBpmMultiplier: Bool = false
+    var bpmMultiplier: Double = 1.0
+    var changeBreatheMode: Bool = false
+    var breatheMode: BreatheMode = .fast
 
     // Laser
     var laser = LaserState()

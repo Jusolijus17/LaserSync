@@ -40,8 +40,8 @@ struct MovingHeadCueSetup: View {
                         }
                         .disabledStyle(cue.movingHead.positionPreset != nil)
                         
+                        // MARK: - Position
                         Group {
-                            // MARK: - Position
                             SettingToggle(settings: $cue.movingHeadSettings, setting: .position, label: "Set Position")
                             
                             Menu {

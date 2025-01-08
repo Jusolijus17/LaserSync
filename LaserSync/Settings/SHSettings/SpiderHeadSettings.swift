@@ -19,7 +19,7 @@ struct SpiderHeadSettings: View {
                 }
             }
             Section(header: Text("Settings").font(.headline)) {
-                NavigationLink(destination: EmptyView()) {
+                NavigationLink(destination: ShPresetManagerView()) {
                     Text("Preset manager")
                 }
             }

@@ -73,7 +73,7 @@ class BPMViewerController: ObservableObject {
     
     func incrementMultiplier() {
         guard let laserConfig else { return }
-        laserConfig.bpmMultiplier *= 2
+        laserConfig.bpmMultiplier = min(16, laserConfig.bpmMultiplier * 2)
         laserConfig.setMultiplier(multiplier: laserConfig.bpmMultiplier)
         laserConfig.restartBpmSyncTimer()
     }
